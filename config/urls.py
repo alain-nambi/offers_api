@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/v1/offers/', include('offers.urls')),
     path('api/v1/account/', include('account.urls')),
     path('api/v1/activation/', include('activation.urls')),
+    path('api/v1/partner/', include('partner.urls')),
     path('swagger/', schema_view.with_ui(
         'swagger', 
         cache_timeout=0

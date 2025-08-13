@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'offers.apps.OffersConfig',
     'account.apps.AccountConfig',
     'activation.apps.ActivationConfig',
+    'partner.apps.PartnerConfig',  # Add the partner app
 ]
 
 MIDDLEWARE = [
@@ -162,3 +163,7 @@ CELERY_TIMEZONE = 'UTC'
 # Email settings (for notifications)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'noreply@offersapi.com'
+
+# External system settings
+EXTERNAL_ACTIVATION_URL = os.environ.get('EXTERNAL_ACTIVATION_URL', 'http://localhost:8000/api/v1/partner/activate/')
+PARTNER_API_KEY = os.environ.get('PARTNER_API_KEY', 'partner-api-key')

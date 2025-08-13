@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 import uuid
 from datetime import datetime, timedelta
 from celery import current_task
@@ -10,6 +11,16 @@ from .tasks import process_activation
 from offers.models import Offer, UserOffer
 from account.models import Account, Transaction
 from account.serializers import TransactionSerializer
+import redis
+import os
+
+# Redis connection
+redis_client = redis.Redis(
+    host=os.environ.get('REDIS_HOST', 'localhost'),
+    port=os.environ.get('REDIS_PORT', '6379'),
+    db=int(os.environ.get('REDIS_DB', '0')),
+    decode_responses=True
+)
 
 
 @api_view(['POST'])
@@ -65,6 +76,19 @@ def activate_offer(request):
         is_active=False  # Will be activated after processing
     )
     
+    # Store transaction data in Redis using HSET
+    transaction_data = {
+        'transaction_id': transaction_id,
+        'user_id': str(request.user.id),
+        'offer_id': str(offer.id),
+        'amount': str(offer.price),
+        'status': 'PENDING',
+        'created_at': str(timezone.now()),
+        'updated_at': str(timezone.now())
+    }
+    
+    redis_client.hset(f"transaction:{transaction_id}", mapping=transaction_data)
+    
     # Sending a task to a Celery worker via Redis for background processing
     process_activation.delay(transaction_id)
     
@@ -85,11 +109,19 @@ def activation_status(request, transaction_id):
     """
     Check the status of a specific activation transaction.
     """
-    transaction = get_object_or_404(
-        Transaction,
-        transaction_id=transaction_id,
-        user=request.user
-    )
+    # First try to get status from Redis
+    transaction_data = redis_client.hgetall(f"transaction:{transaction_id}")
     
-    serializer = TransactionSerializer(transaction)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    if transaction_data:
+        # Return data from Redis
+        return Response(transaction_data, status=status.HTTP_200_OK)
+    else:
+        # Fallback to database if not found in Redis
+        transaction = get_object_or_404(
+            Transaction,
+            transaction_id=transaction_id,
+            user=request.user
+        )
+        
+        serializer = TransactionSerializer(transaction)
+        return Response(serializer.data, status=status.HTTP_200_OK)
