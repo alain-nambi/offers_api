@@ -514,6 +514,75 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Partner",
+			"item": [
+				{
+					"name": "Activate Offer (Partner)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_id\": {{user_id}},\n    \"offer_id\": {{offer_id}},\n    \"amount\": {{amount}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/partner/activate/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"partner",
+								"activate",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Transaction (Partner)",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/partner/validate/{{reference}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"partner",
+								"validate",
+								"{{reference}}",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
@@ -568,6 +637,18 @@
 		{
 			"key": "user_offer_id",
 			"value": "1"
+		},
+		{
+			"key": "user_id",
+			"value": "1"
+		},
+		{
+			"key": "amount",
+			"value": "29.99"
+		},
+		{
+			"key": "reference",
+			"value": "REF-EXAMPLE123"
 		}
 	]
 }
