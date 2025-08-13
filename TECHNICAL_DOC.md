@@ -27,6 +27,8 @@ graph TD
     H --> B
 ```
 
+For a more detailed architecture diagram including the partner module and all system flows, please refer to the [SYSTEM_FLOWCHARTS.md](SYSTEM_FLOWCHARTS.md) document.
+
 ### Component Descriptions
 
 1. **Web API (Django)**: Main application handling HTTP requests

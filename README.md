@@ -1,208 +1,254 @@
 # Offers API
 
-A robust, high-performance RESTful API for an offer bundle activation system (Internet, TV, etc.).
+A high-performance, scalable RESTful API for managing subscription bundles (Internet, TV, etc.) with asynchronous activation and transaction tracking.
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Technology Stack](#technology-stack)
+- [Architecture](#architecture)
+- [Documentation](#documentation)
+- [Getting Started](#getting-started)
+- [API Endpoints](#api-endpoints)
+- [Testing](#testing)
+- [Deployment](#deployment)
 
 ## Overview
 
-This project implements a complete API for managing offer bundles with features like authentication, offer management, account balance tracking, and asynchronous offer activation. The system is built with modern technologies to ensure scalability and proper transaction management.
+The Offers API provides a complete solution for managing subscription offers with features like user authentication, offer browsing, account management, and asynchronous activation processing. The system is designed for telecom/media service providers who need a robust platform for handling customer subscriptions.
+
+## Key Features
+
+- **User Authentication**: JWT-based authentication with refresh tokens
+- **Offer Management**: Browse and select from available subscription offers
+- **Account Management**: Balance checking and subscription management
+- **Asynchronous Activation**: Celery-based background processing for offer activation
+- **Real-time Status Tracking**: Redis-backed transaction status checking
+- **Notifications**: Email notifications for activation status and expiring offers
+- **Partner Integration**: Dedicated API for partner systems to initiate activations
+- **Caching**: Redis caching for improved performance
+- **Monitoring**: Prometheus metrics and Grafana dashboards
 
 ## Technology Stack
 
-- **Language**: Python 3.x
-- **Framework**: Django REST Framework
+- **Backend**: Django 5.0 + Django REST Framework 3.14
 - **Database**: PostgreSQL
-- **Caching/Queue System**: Redis with Celery
-- **Authentication**: JWT (JSON Web Tokens)
-- **Documentation**: Swagger/OpenAPI (drf-yasg)
-- **Containerization**: Docker & Docker Compose
-
-## Features
-
-### Authentication and User Profile (/api/v1/auth)
-- `POST /login`: User authentication with JWT token generation
-- `GET /profile`: Retrieve authenticated user information
-- `POST /logout`: Invalidate user token
-
-### Offer Management (/api/v1/offers)
-- `GET /`: List all available offers (cached for performance)
-- `GET /{offer_id}`: Get details of a specific offer
-- `GET /expiring/`: Get user's expiring offers
-- `POST /renew/`: Renew an expiring offer
-
-### Account Management (/api/v1/account)
-- `GET /balance`: Get current user balance
-- `GET /subscriptions`: List user's active subscriptions
-- `GET /transactions/`: List all user transactions
-- `GET /transactions/{transaction_id}/`: Get status of specific transaction
-
-### Offer Activation (/api/v1/activation)
-- `POST /`: Start asynchronous offer activation process
-- `GET /status/{transaction_id}/`: Check activation status
+- **Cache & Message Broker**: Redis 7.0
+- **Asynchronous Tasks**: Celery 5.3
+- **API Documentation**: drf-yasg (Swagger/OpenAPI)
+- **Testing**: pytest 7.0 + pytest-django 4.5
+- **Deployment**: Docker & Docker Compose
+- **Monitoring**: Prometheus + Grafana
 
 ## Architecture
 
-The activation process is designed to be asynchronous to avoid blocking the client:
-
-1. Client sends activation request to API
-2. API deducts balance and creates PENDING transaction
-3. API publishes task to Redis queue via Celery
-4. Celery worker processes the activation with external systems
-5. Worker updates database with final status (SUCCESS/FAILED)
-6. System sends email/SMS notifications to user
-
-## Additional Features
-
-### Transaction Verification and Tracking
-- Real-time transaction status checking
-- Transaction history with filtering options
-- Unique transaction IDs for tracking
-
-### Offer Recovery and Management
-- Automatic detection of expiring offers
-- Offer renewal functionality
-- Proactive notifications for expiring services
-
-## Setup and Installation
-
-### Using Docker (Recommended)
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd offers-api
-
-# Start all services
-docker-compose up --build
+```mermaid
+graph TD
+    A[Client Applications] --> B[Web API Layer]
+    B --> C[PostgreSQL Database]
+    B --> D[Redis Cache & Broker]
+    B --> E[Celery Workers]
+    E --> D
+    E --> F[External Systems]
+    E --> C
+    G[Monitoring Systems] --> H[Prometheus]
+    H --> B
+    I[Partner Systems] --> B
 ```
 
-### Manual Installation
+For a detailed architecture diagram and flowcharts of all system processes, see [SYSTEM_FLOWCHARTS.md](SYSTEM_FLOWCHARTS.md).
 
-1. Create and activate a virtual environment:
-   ```bash
-   python3 -m venv venv
+## Documentation
+
+- [User Guide](USER_GUIDE.md) - Complete guide for API users
+- [Technical Documentation](TECHNICAL_DOC.md) - In-depth technical implementation details
+- [System Flowcharts](SYSTEM_FLOWCHARTS.md) - Detailed flowcharts for all processes
+- [Postman Guide](POSTMAN_GUIDE.md) - Instructions for using the Postman collection
+- [API Reference](http://localhost:8000/swagger/) - Interactive API documentation (when running)
+
+## Getting Started
+
+### Prerequisites
+
+- Docker & Docker Compose
+- Python 3.8+ (for local development)
+- PostgreSQL (for local development)
+- Redis (for local development)
+
+### Quick Start with Docker
+
+1. Clone the repository:
+   ```
+   git clone <repository-url>
+   cd offers-api
+   ```
+
+2. Configure environment variables:
+   ```
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+3. Start the services:
+   ```
+   docker-compose up -d --build
+   ```
+
+4. Run database migrations:
+   ```
+   docker-compose exec web python manage.py migrate
+   ```
+
+5. Create a superuser (optional):
+   ```
+   docker-compose exec web python manage.py createsuperuser
+   ```
+
+6. Seed the database with test data (optional):
+   ```
+   docker-compose exec web python manage.py seed
+   ```
+
+The API will be available at `http://localhost:8000`
+
+### Local Development Setup
+
+1. Create a virtual environment:
+   ```
+   python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 2. Install dependencies:
-   ```bash
+   ```
    pip install -r requirements.txt
    ```
 
-3. Set up environment variables (see .env.example)
+3. Configure environment variables:
+   ```
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
 
 4. Run database migrations:
-   ```bash
+   ```
    python manage.py migrate
    ```
 
 5. Start the development server:
-   ```bash
+   ```
    python manage.py runserver
    ```
 
-6. In another terminal, start Celery worker:
-   ```bash
+6. In a separate terminal, start Celery worker:
+   ```
    celery -A config worker --loglevel=info
    ```
 
-## Database Seeding
+7. In another terminal, start Celery beat (for scheduled tasks):
+   ```
+   celery -A config beat --loglevel=info
+   ```
 
-To populate the database with initial data for testing:
+## API Endpoints
 
-### Using Docker:
-```bash
-docker-compose exec web python manage.py seed --users 5 --offers 10
-```
+### Authentication
+- `POST /api/v1/auth/login/` - User login
+- `GET /api/v1/auth/profile/` - Get user profile
+- `POST /api/v1/auth/refresh/` - Refresh access token
+- `POST /api/v1/auth/logout/` - User logout
 
-### Manual Installation:
-```bash
-python manage.py seed --users 5 --offers 10
-```
+### Offers
+- `GET /api/v1/offers/` - List all offers
+- `GET /api/v1/offers/{id}/` - Get specific offer details
+- `GET /api/v1/offers/expiring/` - Get user's expiring offers
+- `POST /api/v1/offers/renew/` - Renew an offer
 
-This command creates:
-- 5 test users (user1, user2, etc.) with password "password123"
-- 10 different offers including internet, TV, and bundle packages
+### Account
+- `GET /api/v1/account/balance/` - Get account balance
+- `GET /api/v1/account/subscriptions/` - Get user subscriptions
+- `GET /api/v1/account/transactions/` - List transactions
+- `GET /api/v1/account/transactions/{id}/` - Get transaction details
 
-## API Documentation
+### Activation
+- `POST /api/v1/activation/` - Activate an offer
+- `GET /api/v1/activation/status/{id}/` - Check activation status
 
-Once the server is running, visit:
-- Swagger UI: http://localhost:8000/swagger/
-- Redoc: http://localhost:8000/redoc/
+### Partner
+- `POST /api/v1/partner/activate/` - Partner activation request
+- `GET /api/v1/partner/validate/{reference}/` - Validate transaction by reference
+
+For detailed API documentation, visit the Swagger UI at `http://localhost:8000/swagger/` when the application is running.
 
 ## Testing
 
-### Running Tests with Pytest
-
-The project includes comprehensive tests for all endpoints using pytest:
-
-```bash
-# Run all tests
-pytest
-
-# Run tests for a specific app
-pytest tests/auth/
-
-# Run tests with coverage
-pytest --cov=.
-
-# Run tests with verbose output
-pytest -v
-```
-
-### Test Structure
-
-- `tests/auth/` - Authentication endpoint tests
-- `tests/offers/` - Offer management endpoint tests
-- `tests/account/` - Account management endpoint tests
-- `tests/activation/` - Offer activation endpoint tests
-
-All tests use fixtures for consistent setup and follow pytest best practices.
-
 ### Running Tests with Docker
 
-To run tests in the Docker environment:
-
-On Linux/Mac:
-```bash
-./run_tests.sh
+```
+./run_tests.bat
 ```
 
-On Windows:
-```bash
-run_tests.bat
+### Running Tests Manually
+
+```
+docker-compose exec web pytest
 ```
 
-Or manually:
-```bash
-# Start services
-docker-compose up -d
+### Test Coverage
 
-# Run migrations
-docker-compose exec web python manage.py migrate
+To generate a coverage report:
 
-# Seed database
-docker-compose exec web python manage.py seed --users 3 --offers 5
-
-# Run tests
-docker-compose exec web pytest -v
+```
+docker-compose exec web coverage run -m pytest
+docker-compose exec web coverage report
+docker-compose exec web coverage html
 ```
 
-## Postman Collection
-
-A Postman collection is provided in the file `Offers API.postman_collection.json`. Import this file into Postman to easily test all API endpoints.
-
-The collection includes:
-- Pre-configured requests for all endpoints
-- Environment variables for easy configuration
-- Example requests and expected parameters
-
-## Monitoring and Observability
-
-The system is designed to integrate with:
-- ELK/Loki stack for centralized logging
-- Prometheus for metrics collection
-- Grafana for dashboard visualization
+The HTML coverage report will be available in the `htmlcov/` directory.
 
 ## Deployment
 
-The project is containerized with Docker and Docker Compose for simple and reproducible deployment. All configurations are managed via environment variables.
+### Production Deployment
+
+1. Update environment variables in `docker-compose.yml` for production
+2. Build and start services:
+   ```
+   docker-compose -f docker-compose.yml up -d --build
+   ```
+3. Run migrations:
+   ```
+   docker-compose exec web python manage.py migrate
+   ```
+4. Create superuser:
+   ```
+   docker-compose exec web python manage.py createsuperuser
+   ```
+
+### Environment Variables
+
+Key environment variables that need to be configured:
+
+- `SECRET_KEY` - Django secret key
+- `DEBUG` - Debug mode (False for production)
+- `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT` - Database configuration
+- `REDIS_HOST`, `REDIS_PORT` - Redis configuration
+- `CELERY_BROKER_URL` - Celery broker URL
+
+See [.env.example](.env.example) for a complete list of required environment variables.
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a pull request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For support, please open an issue on the GitHub repository or contact the development team.

@@ -148,6 +148,20 @@ Response:
 
 ## Implementation Flowcharts
 
+Detailed flowcharts for all system processes are available in the [SYSTEM_FLOWCHARTS.md](SYSTEM_FLOWCHARTS.md) document. This includes:
+
+1. Complete system architecture
+2. User authentication flow
+3. Offer management flow
+4. Account management flow
+5. Standard activation flow
+6. Partner activation flow
+7. Transaction status checking flow
+8. Expiring offers notification flow
+9. Error handling and recovery flows
+
+Please refer to that document for comprehensive diagrams of all system processes.
+
 ### Authentication Flow
 ```mermaid
 sequenceDiagram
