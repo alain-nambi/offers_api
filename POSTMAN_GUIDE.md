@@ -148,30 +148,6 @@ Authorization: Bearer {{access_token}}
 2. Update the `transaction_id` parameter in the URL path with the ID from the activation response
 3. Click "Send" to check the activation status
 
-
-## Testing Partner Endpoints
-
-### Partner Offer Activation
-
-1. Navigate to the "Partner" folder
-2. Open the "Activate Offer (Partner)" request
-3. In the request body, specify the user_id, offer_id and amount:
-   ```json
-   {
-     "user_id": 1,
-     "offer_id": 1,
-     "amount": 9.99
-   }
-   ```
-4. Click "Send" to initiate the partner activation process
-5. Note the `reference` number and `transaction_id` from the response
-
-### Validate Transaction
-
-1. In the "Partner" folder, open the "Validate Transaction" request
-2. Update the `reference` parameter in the URL path with the reference number from the activation response
-3. Click "Send" to validate the transaction
-
 ## Example Workflows
 
 ### Complete User Journey
@@ -213,7 +189,6 @@ Authorization: Bearer {{access_token}}
    - Your environment variables are set correctly
    - Your access token is valid and not expired
    - You're using the correct IDs in URL paths and request bodies
-   - For partner endpoints, ensure required parameters like user_id and amount are provided
 
 ## Common Issues and Solutions
 
@@ -224,10 +199,7 @@ Authorization: Bearer {{access_token}}
 - Solution: Check that the IDs you're using in URL paths exist in the database
 
 ### 400 Bad Request
-- Solution: Verify that your request body matches the expected format and contains all required fields
-
-### 400 Bad Request (Partner)
-- Solution: For partner endpoints, ensure you're providing all required fields (user_id, amount, etc.)
+- Solution: Verify that your request body matches the expected format
 
 ### Connection Refused
 - Solution: Ensure the Docker containers are running and the `base_url` is correct
@@ -250,14 +222,5 @@ You can monitor the behavior of requests:
 1. Open any request
 2. Click the "Save Responses" tab
 3. Select "Save to History" to track responses over time
-
-### Partner Workflow Automation
-
-You can automate partner workflows using Postman Tests:
-
-1. Open a request in the Partner folder
-2. Click the "Tests" tab
-3. Add JavaScript code to extract response data (e.g., reference numbers)
-4. Use this data in subsequent requests to create automated partner transaction flows
 
 This documentation should help you effectively use the Postman collection to test all aspects of the Offers API.

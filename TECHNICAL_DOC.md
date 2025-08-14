@@ -8,7 +8,6 @@ This document provides technical details about the implementation of the Offers 
 3. [Celery Tasks](#celery-tasks)
 4. [Data Models](#data-models)
 5. [API Endpoints](#api-endpoints)
-6. [Monitoring](#monitoring)
 
 ## System Architecture
 
@@ -23,8 +22,6 @@ graph TD
     E --> D
     E --> F[External Systems]
     E --> C
-    G[Grafana] --> H[Prometheus]
-    H --> B
 ```
 
 For a more detailed architecture diagram including the partner module and all system flows, please refer to the [SYSTEM_FLOWCHARTS.md](SYSTEM_FLOWCHARTS.md) document.
@@ -39,8 +36,6 @@ For a more detailed architecture diagram including the partner module and all sy
    - Transaction status storage
 4. **Celery**: Asynchronous task processing
 5. **External Systems**: Simulated external activation systems
-6. **Prometheus**: Metrics collection
-7. **Grafana**: Metrics visualization
 
 ## Redis Implementation
 
@@ -106,181 +101,109 @@ transaction_data = {
     'offer_id': str(offer.id),
     'amount': str(offer.price),
     'status': 'PENDING',
-    'created_at': str(timezone.now())
+    'created_at': str(timezone.now()),
+    'updated_at': str(timezone.now())
 }
+
 redis_client.set(f"transaction:{transaction_id}", json.dumps(transaction_data))
 
 # Retrieving
 transaction_json = redis_client.get(f"transaction:{transaction_id}")
 transaction_data = json.loads(transaction_json)
-
-# Updating (requires retrieving, modifying, and storing entire object)
-transaction_data = json.loads(redis_client.get(f"transaction:{transaction_id}"))
-transaction_data['status'] = 'SUCCESS'
-redis_client.set(f"transaction:{transaction_id}", json.dumps(transaction_data))
 ```
 
-#### Hash Approach (Used in Implementation)
+#### Hash-based Approach (Used)
 ```python
 # This is the approach we use
 # Storing
-redis_client.hset(f"transaction:{transaction_id}", mapping=transaction_data)
+redis_client.hset(f"transaction:{transaction_id}", mapping={
+    'transaction_id': str(transaction_id),
+    'user_id': str(request.user.id),
+    'offer_id': str(offer.id),
+    'amount': str(offer.price),
+    'status': 'PENDING',
+    'created_at': str(timezone.now()),
+    'updated_at': str(timezone.now())
+})
 
 # Retrieving
 transaction_data = redis_client.hgetall(f"transaction:{transaction_id}")
 
-# Updating (only modified fields)
-redis_client.hset(f"transaction:{transaction_id}", 'status', 'SUCCESS')
+# Updating specific fields
+redis_client.hset(f"transaction:{transaction_id}", mapping={
+    'status': 'SUCCESS',
+    'updated_at': str(timezone.now())
+})
 ```
 
-### Redis Key Naming Convention
+### Benefits of Hash-based Approach
 
-All Redis keys follow a consistent naming pattern:
-- `transaction:<uuid>` - Transaction data stored as hashes
-- `offer:<id>` - Cached offer data
-- `user:<id>:balance` - User balance
-
-### Redis Configuration
-
-The Redis connection is configured directly in the modules that need it:
-
-```python
-import redis
-import os
-
-# Redis connection
-redis_client = redis.Redis(
-    host=os.environ.get('REDIS_HOST', 'localhost'),
-    port=os.environ.get('REDIS_PORT', '6379'),
-    db=int(os.environ.get('REDIS_DB', '0')),
-    decode_responses=True
-)
-```
+1. **Partial Updates**: Only changed fields are updated, reducing network traffic
+2. **No Serialization Overhead**: Values are stored as strings, eliminating JSON parsing
+3. **Individual Field Access**: Can retrieve or update specific fields without affecting others
+4. **Better Performance**: HGETALL is more efficient than JSON parsing
+5. **Atomic Operations**: HSET operations are atomic
 
 ## Celery Tasks
 
-### Process Activation Task
+### Activation Task
 
-The main activation task is implemented in [activation/tasks.py](file:///c%3A/Users/alain/Pictures/Offers%20API/activation/tasks.py):
+The activation task ([process_activation](file:///c%3A/Users/alain/Pictures/Offers%20API/activation/tasks.py#L23-L118)) is responsible for processing offer activations asynchronously:
+
+1. Update transaction status to PROCESSING
+2. Call external system to activate the offer
+3. Handle success or failure cases
+4. Update transaction status accordingly
+5. Send notifications to the user
 
 ```python
-@shared_task(bind=True, autoretry_for=(Exception,), retry_kwargs={'max_retries': 3})
+@shared_task
 def process_activation(transaction_id):
-    start_time = time.time()
-    
-    try:
-        # Get the transaction
-        transaction = Transaction.objects.get(transaction_id=transaction_id)
-        
-        # Update status to PROCESSING
-        transaction.status = 'PROCESSING'
-        transaction.save()
-        
-        # Update Redis cache
-        redis_client.hset(f"transaction:{transaction_id}", mapping={
-            'status': 'PROCESSING',
-            'updated_at': str(timezone.now())
-        })
-        
-        # Simulate external system call for activation
-        activation_result = activate_offer_in_external_system(transaction)
-        
-        if activation_result:
-            # Success case
-            transaction.status = 'SUCCESS'
-            transaction.completed_at = timezone.now()
-            transaction.save()
-            
-            # Update Redis cache
-            redis_client.hset(f"transaction:{transaction_id}", mapping={
-                'status': 'SUCCESS',
-                'updated_at': str(timezone.now())
-            })
-            
-            # Activate the user offer
-            try:
-                user_offer = UserOffer.objects.get(transaction_id=transaction_id)
-                user_offer.is_active = True
-                user_offer.save()
-            except UserOffer.DoesNotExist:
-                logger.error(f"UserOffer not found for transaction {transaction_id}")
-                track_activation('failed', start_time)
-        else:
-            # Failure case
-            transaction.status = 'FAILED'
-            transaction.completed_at = timezone.now()
-            transaction.save()
-            
-            # Update Redis cache
-            redis_client.hset(f"transaction:{transaction_id}", mapping={
-                'status': 'FAILED',
-                'updated_at': str(timezone.now())
-            })
-            
-            # Refund the user
-            from account.models import Account
-            account, created = Account.objects.get_or_create(user=transaction.user)
-            account.balance += transaction.amount
-            account.save()
-            
-        return f"Activation processed with status: {transaction.status}"
-        
-    except Transaction.DoesNotExist:
-        logger.error(f"Transaction {transaction_id} not found")
-        # Update Redis cache
-        redis_client.hset(f"transaction:{transaction_id}", mapping={
-            'status': 'FAILED',
-            'updated_at': str(timezone.now())
-        })
-        return f"Transaction {transaction_id} not found"
-    except Exception as e:
-        logger.error(f"Error processing activation {transaction_id}: {str(e)}")
-        # Update Redis cache
-        redis_client.hset(f"transaction:{transaction_id}", mapping={
-            'status': 'FAILED',
-            'updated_at': str(timezone.now())
-        })
-        
-        # Update transaction status to FAILED in case of exception
-        try:
-            transaction = Transaction.objects.get(transaction_id=transaction_id)
-            transaction.status = 'FAILED'
-            transaction.completed_at = timezone.now()
-            transaction.save()
-        except Transaction.DoesNotExist:
-            pass
-        return f"Error processing activation: {str(e)}"
+    # Implementation details...
 ```
 
-### Task Routing
+### Expiring Offers Check Task
 
-Celery is configured in [config/celery.py](file:///c%3A/Users/alain/Pictures/Offers%20API/config/celery.py):
+The [check_expiring_offers](file:///c%3A/Users/alain/Pictures/Offers%20API/activation/tasks.py#L144-L177) task runs daily to notify users about expiring offers:
+
+1. Query database for offers expiring in the next 3 days
+2. Send notifications to affected users
 
 ```python
-import os
-from celery import Celery
-
-# Set the default Django settings module for the 'celery' program.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.base')
-
-app = Celery('offers_api')
-
-# Using a string here means the worker doesn't have to serialize
-# the configuration object to child processes.
-# - namespace='CELERY' means all celery-related configuration keys
-#   should have a `CELERY_` prefix.
-app.config_from_object('django.conf:settings', namespace='CELERY')
-
-# Load task modules from all registered Django apps.
-app.autodiscover_tasks()
+@shared_task
+def check_expiring_offers():
+    # Implementation details...
 ```
+
+### Task Monitoring and Retry Logic
+
+Tasks are designed with robust error handling and retry mechanisms:
+
+1. All tasks are logged for monitoring
+2. Failures are gracefully handled with appropriate status updates
+3. Failed activations are refunded to user accounts
+4. Redis is kept in sync with database during all operations
 
 ## Data Models
 
+For a comprehensive view of all model relationships in the system, please refer to the [MODEL_DIAGRAM.md](MODEL_DIAGRAM.md) document.
+
 ### User Model
-The default Django user model is used for authentication.
+
+The standard Django User model is used with additional account information:
+
+```python
+# Django's built-in User model
+class User(models.Model):
+    username = models.CharField(max_length=150)
+    email = models.EmailField()
+    # ... other fields
+```
 
 ### Account Model
+
+The Account model stores user balance information:
+
 ```python
 class Account(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -288,106 +211,100 @@ class Account(models.Model):
 ```
 
 ### Offer Model
+
+The Offer model represents available offers:
+
 ```python
 class Offer(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=100)
+    description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    duration_days = models.IntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    duration_days = models.IntegerField(help_text="Duration of the offer in days")
+    is_active = models.BooleanField(default=True)
+```
+
+### UserOffer Model
+
+The UserOffer model represents activated offers for users:
+
+```python
+class UserOffer(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
+    activation_date = models.DateTimeField(auto_now_add=True)
+    expiration_date = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    transaction_id = models.CharField(max_length=100, unique=True)
 ```
 
 ### Transaction Model
+
+The Transaction model tracks all financial transactions:
+
 ```python
 class Transaction(models.Model):
-    STATUS_CHOICES = [
+    TRANSACTION_STATUS_CHOICES = [
         ('PENDING', 'Pending'),
         ('PROCESSING', 'Processing'),
         ('SUCCESS', 'Success'),
         ('FAILED', 'Failed'),
     ]
     
+    transaction_id = models.CharField(max_length=100, unique=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
-    transaction_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    status = models.CharField(max_length=20, choices=TRANSACTION_STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 ```
 
-### UserOffer Model
+### PartnerTransaction Model
+
+The PartnerTransaction model tracks transactions initiated by partner systems:
+
 ```python
-class UserOffer(models.Model):
+class PartnerTransaction(models.Model):
+    transaction_id = models.CharField(max_length=100, unique=True)
+    reference = models.CharField(max_length=100, unique=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
-    transaction_id = models.UUIDField()
-    is_active = models.BooleanField(default=False)
-    expiration_date = models.DateTimeField()
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=Transaction.TRANSACTION_STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 ```
 
 ## API Endpoints
 
-### Authentication
+### Authentication Endpoints
+
 - `POST /api/v1/auth/login/` - User login
-- `POST /api/v1/auth/refresh/` - Refresh access token
-- `POST /api/v1/auth/logout/` - Logout user
 - `GET /api/v1/auth/profile/` - Get user profile
+- `POST /api/v1/auth/refresh/` - Refresh access token
+- `POST /api/v1/auth/logout/` - User logout
 
-### Offers
+### Offer Endpoints
+
 - `GET /api/v1/offers/` - List all offers
-- `GET /api/v1/offers/{id}/` - Get offer details
+- `GET /api/v1/offers/{id}/` - Get specific offer details
+- `GET /api/v1/offers/expiring/` - Get user's expiring offers
+- `POST /api/v1/offers/renew/` - Renew an offer
 
-### Account
-- `GET /api/v1/account/` - Get account balance
+### Account Endpoints
+
+- `GET /api/v1/account/balance/` - Get account balance
+- `GET /api/v1/account/subscriptions/` - Get user subscriptions
 - `GET /api/v1/account/transactions/` - List transactions
 - `GET /api/v1/account/transactions/{id}/` - Get transaction details
 
-### Activation
-- `POST /api/v1/activation/` - Request offer activation
-- `GET /api/v1/activation/status/{transaction_id}/` - Check activation status
+### Activation Endpoints
 
-## Monitoring
+- `POST /api/v1/activation/` - Activate an offer
+- `GET /api/v1/activation/status/{id}/` - Check activation status
 
-### Prometheus Metrics
+### Partner Endpoints
 
-The application exposes several custom metrics for monitoring:
-
-1. `activation_requests_total` - Counter for tracking activation requests by status
-2. `celery_workers` - Gauge for tracking current Celery workers
-3. `activation_processing_seconds` - Histogram for tracking activation processing time
-
-Defined in [activation/metrics.py](file:///c%3A/Users/alain/Pictures/Offers%20API/activation/metrics.py):
-
-```python
-# Counter for tracking activation requests
-activation_requests_total = Counter(
-    'activation_requests_total',
-    'Total number of activation requests',
-    ['status']
-)
-
-# Gauge for tracking current Celery workers
-celery_workers = Gauge(
-    'celery_workers',
-    'Number of active Celery workers'
-)
-
-# Histogram for tracking activation processing time
-activation_processing_time = Histogram(
-    'activation_processing_seconds',
-    'Time spent processing activations',
-    ['status']
-)
-```
-
-### Grafana Dashboard
-
-A pre-configured Grafana dashboard is provided in [grafana/provisioning/dashboards/offers-dashboard.json](file:///c%3A/Users/alain/Pictures/Offers%20API/grafana/provisioning/dashboards/offers-dashboard.json) with panels for:
-
-1. Activation Requests Overview
-2. Activation Success Rate
-3. Failed Activations (Hourly)
-4. Celery Worker Status
+- `POST /api/v1/partner/activate/` - Partner activation request
+- `GET /api/v1/partner/validate/{reference}/` - Validate transaction by reference
