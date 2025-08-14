@@ -1,15 +1,17 @@
-import { 
-  BarChart3, 
-  MessageSquare, 
-  Users, 
-  Ticket, 
-  Lightbulb, 
-  FileText, 
-  Settings, 
-  HelpCircle 
+import {
+  BarChart3,
+  MessageSquare,
+  Users,
+  Ticket,
+  Lightbulb,
+  FileText,
+  Settings,
+  HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function Sidebar() {
   return (
@@ -25,68 +27,72 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 p-4 space-y-6">
-        <nav className="space-y-1">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">MAIN</h3>
-          <Button variant="ghost" className="w-full justify-start px-3 py-2 text-blue-600 bg-blue-50">
-            <BarChart3 className="w-5 h-5 mr-3" />
-            Dashboard
-          </Button>
-          <Button variant="ghost" className="w-full justify-start px-3 py-2">
-            <MessageSquare className="w-5 h-5 mr-3" />
-            Inbox
-          </Button>
-          <Button variant="ghost" className="w-full justify-start px-3 py-2">
-            <Users className="w-5 h-5 mr-3" />
-            Customer
-          </Button>
-          <Button variant="ghost" className="w-full justify-start px-3 py-2">
-            <Ticket className="w-5 h-5 mr-3" />
-            Ticket
-          </Button>
-        </nav>
+      <ScrollArea className="h-100 w-100%">
+        <div className="flex-1 p-4 space-y-6">
+          <nav className="space-y-1">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">MAIN</h3>
+            <Button variant="ghost" className="w-full justify-start px-3 py-2 text-blue-600 bg-blue-50">
+              <BarChart3 className="w-5 h-5 mr-3" />
+              Dashboard
+            </Button>
+            <Button variant="ghost" className="w-full justify-start px-3 py-2">
+              <MessageSquare className="w-5 h-5 mr-3" />
+              Inbox
+            </Button>
+            <Button variant="ghost" className="w-full justify-start px-3 py-2">
+              <Users className="w-5 h-5 mr-3" />
+              Customer
+            </Button>
+            <Button variant="ghost" className="w-full justify-start px-3 py-2">
+              <Ticket className="w-5 h-5 mr-3" />
+              Ticket
+            </Button>
+          </nav>
 
-        <nav className="space-y-1">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">TOOLS</h3>
-          <Button variant="ghost" className="w-full justify-start px-3 py-2">
-            <Lightbulb className="w-5 h-5 mr-3" />
-            Insight
-          </Button>
-          <Button variant="ghost" className="w-full justify-start px-3 py-2">
-            <MessageSquare className="w-5 h-5 mr-3" />
-            Forum
-          </Button>
-          <Button variant="ghost" className="w-full justify-start px-3 py-2">
-            <FileText className="w-5 h-5 mr-3" />
-            Reports
-          </Button>
-        </nav>
+          <nav className="space-y-1">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">TOOLS</h3>
+            <Button variant="ghost" className="w-full justify-start px-3 py-2">
+              <Lightbulb className="w-5 h-5 mr-3" />
+              Insight
+            </Button>
+            <Button variant="ghost" className="w-full justify-start px-3 py-2">
+              <MessageSquare className="w-5 h-5 mr-3" />
+              Forum
+            </Button>
+            <Button variant="ghost" className="w-full justify-start px-3 py-2">
+              <FileText className="w-5 h-5 mr-3" />
+              Reports
+            </Button>
+          </nav>
 
-        <div>
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">CONVERSATION</h3>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between px-3 py-2">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900">Main</div>
-                  <div className="text-xs text-gray-500">(612) 0998 - 3956</div>
+          <div>
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">CONVERSATION</h3>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-3 py-2">
+                <div className="flex items-center space-x-3">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">Main</div>
+                    <div className="text-xs text-gray-500">(612) 0998 - 3956</div>
+                  </div>
                 </div>
+                <span className="text-xs bg-blue-100 text-blue-800 font-medium px-2 py-0.5 rounded-full">15</span>
               </div>
-              <span className="text-xs bg-blue-100 text-blue-800 font-medium px-2 py-0.5 rounded-full">15</span>
-            </div>
-            <div className="flex items-center justify-between px-3 py-2">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900">Marketing</div>
-                  <div className="text-xs text-gray-500">(415) 2357 - 9070</div>
+              <div className="flex items-center justify-between px-3 py-2">
+                <div className="flex items-center space-x-3">
+                  <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">Marketing</div>
+                    <div className="text-xs text-gray-500">(415) 2357 - 9070</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </ScrollArea>
+
+
 
       {/* Bottom */}
       <div className="p-4 border-t space-y-2">
