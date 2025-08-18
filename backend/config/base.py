@@ -11,6 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Load environment variables from .env file
 from dotenv import load_dotenv
 load_dotenv(BASE_DIR / '.env')
+load_dotenv(BASE_DIR / '.env.prod', override=True)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-default-key-for-dev-only')
@@ -83,6 +84,10 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
+
+# Make sure the database configuration is valid
+if not DATABASES['default']['ENGINE']:
+    raise ValueError("DATABASES ENGINE is not configured properly")
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
