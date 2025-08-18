@@ -38,6 +38,7 @@ services:
       gunicorn --bind 0.0.0.0:8000 config.wsgi:application"
     volumes:
       - static_volume:/app/static
+      - ./logs:/app/logs
     ports:
       - "8000:8000"
     env_file:
@@ -59,6 +60,8 @@ services:
         sleep 2;
       done;
       celery -A config worker --loglevel=info"
+    volumes:
+      - ./logs:/app/logs
     env_file:
       - .env.prod
     depends_on:
@@ -78,6 +81,8 @@ services:
         sleep 2;
       done;
       celery -A config beat --loglevel=info"
+    volumes:
+      - ./logs:/app/logs
     env_file:
       - .env.prod
     depends_on:

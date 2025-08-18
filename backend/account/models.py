@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Account(models.Model):
@@ -11,6 +14,11 @@ class Account(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - Balance: {self.balance}"
+
+    def save(self, *args, **kwargs):
+        logger.info(f"Saving account for user {self.user.id}, balance: {self.balance}")
+        super().save(*args, **kwargs)
+        logger.info(f"Account for user {self.user.id} saved successfully")
 
 
 class Transaction(models.Model):
@@ -33,3 +41,8 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.transaction_id} - {self.status}"
+
+    def save(self, *args, **kwargs):
+        logger.info(f"Saving transaction {self.transaction_id} with status {self.status}")
+        super().save(*args, **kwargs)
+        logger.info(f"Transaction {self.transaction_id} saved successfully")

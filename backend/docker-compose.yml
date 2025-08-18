@@ -39,6 +39,7 @@ services:
              python manage.py seed --users 5 --offers 10"
     volumes:
       - .:/app
+      - ./logs:/app/logs
     ports:
       - "8000:8000"
     environment:
@@ -67,6 +68,7 @@ services:
       celery -A config worker --loglevel=info"
     volumes:
       - .:/app
+      - ./logs:/app/logs
     environment:
       - DEBUG=True
       - DB_NAME=offers_db
@@ -93,6 +95,7 @@ services:
       celery -A config beat --loglevel=info"
     volumes:
       - .:/app
+      - ./logs:/app/logs
     environment:
       - DEBUG=True
       - DB_NAME=offers_db

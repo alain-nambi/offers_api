@@ -15,6 +15,7 @@ This guide explains how to deploy the Offers API application in a production env
 - Collects static files
 - Runs as a non-root user for security
 - Includes netcat utility for health checks
+- Creates logs directory for application logging
 - Optimized for production performance
 
 ### docker-compose.prod.yml
@@ -23,6 +24,7 @@ This guide explains how to deploy the Offers API application in a production env
 - Includes volume management for static files and database persistence
 - Implements health checks for PostgreSQL and Redis
 - Services wait for dependencies to be ready before starting
+- Includes log volume for persistent logging
 - Configured for production deployment
 
 ## Deployment Steps
@@ -68,6 +70,55 @@ The production setup includes health checks for critical services:
 2. Redis health check ensures cache service availability
 3. Application services wait for dependencies before starting
 4. Automatic restart policies ensure service recovery
+
+## Logging
+
+The application includes comprehensive logging for tracking activation status and other important events:
+
+1. Django application logs are stored in `logs/django.log`
+2. Activation process logs are stored in `logs/activation.log`
+3. Celery task logs are stored in `logs/celery.log`
+4. Log files are persisted using bind mounts, making them accessible on the host system
+5. Different loggers are configured for different components
+
+To view logs:
+```bash
+# View all logs
+docker-compose -f docker-compose.prod.yml logs -f
+
+# View web service logs
+docker-compose -f docker-compose.prod.yml logs -f web
+
+# View Celery worker logs
+docker-compose -f docker-compose.prod.yml logs -f celery
+
+# View specific log files directly from the host system
+cat logs/django.log
+cat logs/activation.log
+cat logs/celery.log
+
+# Or view log files from within the container
+docker-compose -f docker-compose.prod.yml exec web cat logs/django.log
+docker-compose -f docker-compose.prod.yml exec web cat logs/activation.log
+docker-compose -f docker-compose.prod.yml exec web cat logs/celery.log
+```
+
+## Monitoring Activation Status
+
+You can monitor activation status through:
+
+1. Log files - Detailed logging of each step in the activation process
+2. Redis cache - Real-time status updates stored with HSET
+3. Database records - Persistent transaction records
+4. API endpoints - `/api/v1/activation/status/{transaction_id}/` to check status
+
+## Log File Access
+
+Log files are accessible in two ways:
+1. Directly on the host system in the `logs` directory
+2. From within the Docker containers in the `/app/logs` directory
+
+The bind mount configuration ensures that log files are synchronized between the container and host system, making it easy to monitor and analyze logs without needing to enter the containers.
 
 ## Security Considerations
 
