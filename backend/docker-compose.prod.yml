@@ -59,12 +59,6 @@ services:
         sleep 2;
       done;
       celery -A config worker --loglevel=info"
-    environment:
-      - DB_HOST=db
-      - DB_PORT=5432
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - DJANGO_SETTINGS_MODULE=config.base
     env_file:
       - .env.prod
     depends_on:
@@ -78,7 +72,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
-    command: celery -A config beat --loglevel=info
+    command: >
+      sh -c "while ! nc -z db 5432 && ! nc -z redis 6379; do
+        echo 'Waiting for database and redis...';
+        sleep 2;
+      done;
+      celery -A config beat --loglevel=info"
     env_file:
       - .env.prod
     depends_on:

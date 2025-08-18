@@ -23,7 +23,6 @@ This guide explains how to deploy the Offers API application in a production env
 - Includes volume management for static files and database persistence
 - Implements health checks for PostgreSQL and Redis
 - Services wait for dependencies to be ready before starting
-- Explicitly sets environment variables for database and Redis connections
 - Configured for production deployment
 
 ## Deployment Steps
@@ -69,13 +68,6 @@ The production setup includes health checks for critical services:
 2. Redis health check ensures cache service availability
 3. Application services wait for dependencies before starting
 4. Automatic restart policies ensure service recovery
-
-## Database Configuration
-
-The application now properly loads environment variables for database configuration:
-- Explicitly loads `.env.prod` file in settings
-- Validates database configuration to prevent startup issues
-- Sets proper environment variables in docker-compose for database connectivity
 
 ## Security Considerations
 
