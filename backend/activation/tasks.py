@@ -23,8 +23,8 @@ redis_client = redis.Redis(
 logger = logging.getLogger(__name__)
 
 # Partner system configuration
-PARTNER_ACTIVATION_URL = os.environ.get('EXTERNAL_ACTIVATION_URL', 'http://web:8000/api/v1/partner/activate/')
-PARTNER_VALIDATION_URL = os.environ.get('PARTNER_VALIDATION_URL', 'http://web:8000/api/v1/partner/validate/')
+PARTNER_ACTIVATION_URL = os.environ.get('EXTERNAL_ACTIVATION_URL', 'http://web:8000/api/v1/partner/activate')
+PARTNER_VALIDATION_URL = os.environ.get('PARTNER_VALIDATION_URL', 'http://web:8000/api/v1/partner/validate')
 PARTNER_API_KEY = os.environ.get('PARTNER_API_KEY', 'partner-api-key')
 PARTNER_SYSTEM_TIMEOUT = int(os.environ.get('PARTNER_SYSTEM_TIMEOUT', '30'))  # seconds
 
@@ -174,7 +174,6 @@ def activate_offer_with_partner(transaction):
         logger.info(f"Preparing to call partner system for transaction {transaction.transaction_id}")
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {PARTNER_API_KEY}',
             'User-Agent': 'Offers-API/1.0'
         }
         
@@ -187,14 +186,21 @@ def activate_offer_with_partner(transaction):
         logger.info(f"Prepared activation data for transaction {transaction.transaction_id}: {activation_data}")
         
         # Make request to partner system
-        logger.info(f"Making POST request to {PARTNER_ACTIVATION_URL} for transaction {transaction.transaction_id}")
+        url = f"{PARTNER_ACTIVATION_URL}/"
+        logger.info(f"Making POST request to {url} for transaction {transaction.transaction_id}")
+        # logger.info(f"Full URL: {url}")
+        # logger.info(f"PARTNER_ACTIVATION_URL: {PARTNER_ACTIVATION_URL}")
+        # logger.info(f"Activation data: {activation_data}")
+        # logger.info(f"Headers: {headers}")
         response = requests.post(
-            PARTNER_ACTIVATION_URL,
+            url,
             headers=headers,
             json=activation_data,
             timeout=PARTNER_SYSTEM_TIMEOUT
         )
         logger.info(f"Received response with status {response.status_code} for transaction {transaction.transaction_id}")
+        if response.status_code != 201:
+            logger.error(f"Error response content: {response.text}")
         
         # Check if request was successful
         if response.status_code == 201:
@@ -281,18 +287,25 @@ def validate_partner_transaction(reference):
         logger.info(f"Validating partner transaction with reference {reference}")
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {PARTNER_API_KEY}',
             'User-Agent': 'Offers-API/1.0'
         }
         
         # Make request to validate the reference
-        logger.info(f"Making GET request to {PARTNER_VALIDATION_URL}{reference}/")
+        validation_url = f"{PARTNER_VALIDATION_URL}/{reference}/"
+        logger.info(f"Making GET request to {validation_url}")
+        # logger.info(f"Full validation URL: {validation_url}")
+        # logger.info(f"PARTNER_VALIDATION_URL: {PARTNER_VALIDATION_URL}")
+        # logger.info(f"Reference: {reference}")
+        # logger.info(f"Headers: {headers}")
         response = requests.get(
-            f"{PARTNER_VALIDATION_URL}{reference}/",
+            validation_url,
             headers=headers,
             timeout=PARTNER_SYSTEM_TIMEOUT
         )
         logger.info(f"Received validation response with status {response.status_code} for reference {reference}")
+        logger.info(f"Response content: {response.text}")
+        if response.status_code != 200:
+            logger.error(f"Error validating response content: {response.text}")
         
         # Check if request was successful
         if response.status_code == 200:
