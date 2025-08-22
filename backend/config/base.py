@@ -41,9 +41,11 @@ INSTALLED_APPS = [
     'account.apps.AccountConfig',
     'activation.apps.ActivationConfig',
     'partner.apps.PartnerConfig',  # Add the partner app
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -52,6 +54,15 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# Allow frontend origin
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    # "https://your-production-frontend.com"  # Add production URL later
+]
+
+# Optional: Allow credentials (cookies, Authorization)
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'config.urls'
 
