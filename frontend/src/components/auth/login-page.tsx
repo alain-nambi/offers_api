@@ -7,14 +7,21 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+// LoginPage component for user authentication
 const LoginPage: React.FC = () => {
+  // State for form fields
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  // State for loading and error handling
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Hook for navigation
   const navigate = useNavigate();
+  // Get login function from auth context
   const { login } = useAuth();
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -24,10 +31,11 @@ const LoginPage: React.FC = () => {
       // Login using the auth context
       await login(username, password);
       
-      // Redirect to dashboard
+      // Redirect to dashboard after successful login
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       console.error('Login error:', err);
+      // Handle different types of errors
       if (err.response?.status === 401) {
         setError('Invalid username or password');
       } else {
@@ -38,6 +46,7 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  // Render the login form
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <Card className="w-full max-w-md">
@@ -47,14 +56,17 @@ const LoginPage: React.FC = () => {
             Enter your credentials to access your account
           </CardDescription>
         </CardHeader>
+        {/* Login form */}
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {/* Display error message if exists */}
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
             
+            {/* Username input field */}
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
@@ -68,6 +80,7 @@ const LoginPage: React.FC = () => {
               />
             </div>
             
+            {/* Password input field */}
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -82,6 +95,7 @@ const LoginPage: React.FC = () => {
             </div>
           </CardContent>
           
+          {/* Submit button */}
           <CardFooter className="flex flex-col">
             <Button 
               type="submit" 
