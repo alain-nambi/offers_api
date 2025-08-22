@@ -7,7 +7,7 @@ import { useAuth } from '@/services/auth-context';
 // Header component for the dashboard
 export function Header() {
   // Get user and logout function from auth context
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   return (
     <header className="border-b px-6 py-4 sticky top-0 z-4 bg-background/70 backdrop-blur">
@@ -45,15 +45,6 @@ export function Header() {
                 <div className="font-medium text-gray-900">{user?.username || 'User'}</div>
                 <div className="text-gray-500">Free Plan</div>
               </div>
-              {/* Logout button */}
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={logout}
-                className="ml-2"
-              >
-                Logout
-              </Button>
             </div>
           </div>
         </div>
