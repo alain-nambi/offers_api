@@ -1,5 +1,5 @@
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
@@ -11,9 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 @api_view(['POST'])
-@authentication_classes([])
-@permission_classes([AllowAny])
-@csrf_exempt
+# Remove authentication_classes and csrf_exempt to use default authentication
+@permission_classes([IsAuthenticated])
 def activate_offer(request):
     """
     Partner API endpoint to initiate an offer activation.
@@ -67,8 +66,8 @@ def activate_offer(request):
 
 
 @api_view(['GET'])
-@authentication_classes([])
-@permission_classes([AllowAny])
+# Remove authentication_classes and csrf_exempt to use default authentication
+@permission_classes([IsAuthenticated])
 def validate_transaction(request, reference):
     """
     Partner API endpoint to validate a transaction by reference.
