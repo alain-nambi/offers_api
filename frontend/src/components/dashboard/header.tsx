@@ -1,9 +1,11 @@
 import { Bell, HelpCircle, Calendar, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from '@/services/auth-context';
 
 export function Header() {
+  const { user } = useAuth();
+
   return (
     <header className="border-b px-6 py-4 sticky top-0 z-4 bg-background/70 backdrop-blur">
       <div className="flex items-center justify-between">
@@ -25,10 +27,12 @@ export function Header() {
             <div className="flex items-center space-x-2">
               <Avatar className="w-8 h-8">
                 <AvatarImage src="https://csspicker.dev/api/image/?q=profile+avatar&image_type=photo" />
-                <AvatarFallback>YA</AvatarFallback>
+                <AvatarFallback>
+                  {user?.username?.charAt(0)?.toUpperCase() || 'U'}
+                </AvatarFallback>
               </Avatar>
               <div className="text-sm">
-                <div className="font-medium text-gray-900">Young Alaska</div>
+                <div className="font-medium text-gray-900">{user?.username || 'User'}</div>
                 <div className="text-gray-500">Free Plan</div>
               </div>
             </div>
