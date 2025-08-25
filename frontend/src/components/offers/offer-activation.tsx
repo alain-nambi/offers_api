@@ -135,10 +135,14 @@ const OfferActivation: React.FC = () => {
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.3 }}
+          className="fixed top-0 left-64 right-0 bg-white p-4 shadow"
         >
           <h2 className="text-2xl font-bold tracking-tight">Available Offers</h2>
           <p className="text-muted-foreground">
-            Activate offers to start using our services. Your current balance: {user?.account?.balance ? formatCurrency(user.account.balance) : 'N/A'}
+            Activate offers to start using our services. Your current balance : 
+            <Badge variant={"outline"} className='text-md'>
+              {user?.account?.balance ? formatCurrency(user.account.balance) : 'N/A'}
+            </Badge>
           </p>
         </motion.div>
 
@@ -159,8 +163,8 @@ const OfferActivation: React.FC = () => {
             </Card>
           </motion.div>
         ) : (
-          <motion.div 
-            className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+          <motion.div
+            className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-22"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.3 }}
