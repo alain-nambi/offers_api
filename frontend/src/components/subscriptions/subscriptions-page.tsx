@@ -102,7 +102,7 @@ const SubscriptionsPage: React.FC = () => {
         transition={{ duration: 0.3 }}
         className="flex-1 flex flex-col p-6 space-y-6 ml-64"
       >
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 fixed top-0 left-64 right-0 bg-white p-4 shadow z-10">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Subscriptions</h1>
             <p className="text-muted-foreground">
@@ -131,7 +131,7 @@ const SubscriptionsPage: React.FC = () => {
           </motion.div>
         ) : (
           <motion.div
-            className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+            className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-22"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.3 }}

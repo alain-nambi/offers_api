@@ -131,13 +131,19 @@ const OfferActivation: React.FC = () => {
         <motion.div
           className="fixed top-0 left-64 right-0 bg-white p-4 shadow z-10"
         >
-          <h2 className="text-2xl font-bold tracking-tight">Available Offers</h2>
-          <p className="text-muted-foreground">
-            Activate offers to start using our services. Your current balance : 
-            <Badge variant={"outline"} className='text-md'>
-              {user?.account?.balance ? formatCurrency(user.account.balance) : 'N/A'}
-            </Badge>
-          </p>
+          <div className='flex justify-between items-center'>
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Available Offers</h2>
+              <p className="text-muted-foreground"> Activate offers to start using our services</p>
+            </div>
+
+            <p className="text-muted-foreground">
+             . Your current balance : 
+              <Badge variant={"outline"} className='text-md'>
+                {user?.account?.balance ? formatCurrency(user.account.balance) : 'N/A'}
+              </Badge>
+            </p>
+          </div>
         </motion.div>
 
         {offers.length === 0 ? (
