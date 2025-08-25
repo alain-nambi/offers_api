@@ -2,14 +2,14 @@ from celery import shared_task
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
+from django.contrib.auth.models import User
 from account.models import Transaction
-from offers.models import UserOffer
+from offers.models import UserOffer, Offer
 from partner.models import PartnerTransaction
 import logging
 import redis
 import os
-import requests
-from requests.exceptions import RequestException, Timeout, ConnectionError
+import uuid
 import json
 
 # Redis connection
@@ -23,9 +23,6 @@ redis_client = redis.Redis(
 logger = logging.getLogger(__name__)
 
 # Partner system configuration
-PARTNER_ACTIVATION_URL = os.environ.get('EXTERNAL_ACTIVATION_URL', 'http://web:8000/api/v1/partner/activate')
-PARTNER_VALIDATION_URL = os.environ.get('PARTNER_VALIDATION_URL', 'http://web:8000/api/v1/partner/validate')
-PARTNER_API_KEY = os.environ.get('PARTNER_API_KEY', 'partner-api-key')
 PARTNER_SYSTEM_TIMEOUT = int(os.environ.get('PARTNER_SYSTEM_TIMEOUT', '30'))  # seconds
 
 
@@ -162,7 +159,7 @@ def process_activation(self, transaction_id):
 
 def activate_offer_with_partner(transaction):
     """
-    Call partner system to activate an offer and get a reference number.
+    Directly create partner transaction instead of calling partner API via HTTP.
     
     Args:
         transaction (Transaction): The transaction to activate
@@ -171,102 +168,74 @@ def activate_offer_with_partner(transaction):
         dict: Response with success status, reference number, and optional error message
     """
     try:
-        logger.info(f"Preparing to call partner system for transaction {transaction.transaction_id}")
-        headers = {
-            'Content-Type': 'application/json',
-            'User-Agent': 'Offers-API/1.0'
-        }
+        logger.info(f"Creating partner transaction for internal transaction {transaction.transaction_id}")
         
-        # Prepare data for partner system
-        activation_data = {
-            'user_id': transaction.user.id,
-            'offer_id': transaction.offer.id,
-            'amount': float(transaction.amount),
-        }
-        logger.info(f"Prepared activation data for transaction {transaction.transaction_id}: {activation_data}")
+        # Validate user exists
+        try:
+            user = User.objects.get(id=transaction.user.id)
+        except User.DoesNotExist:
+            logger.warning(f"User {transaction.user.id} not found for partner transaction")
+            return {
+                'success': False,
+                'error': 'User not found'
+            }
         
-        # Make request to partner system
-        url = f"{PARTNER_ACTIVATION_URL}/"
-        logger.info(f"Making POST request to {url} for transaction {transaction.transaction_id}")
-        # logger.info(f"Full URL: {url}")
-        # logger.info(f"PARTNER_ACTIVATION_URL: {PARTNER_ACTIVATION_URL}")
-        # logger.info(f"Activation data: {activation_data}")
-        # logger.info(f"Headers: {headers}")
-        response = requests.post(
-            url,
-            headers=headers,
-            json=activation_data,
-            timeout=PARTNER_SYSTEM_TIMEOUT
+        # Validate offer exists and is active
+        try:
+            offer = Offer.objects.get(id=transaction.offer.id, is_active=True)
+        except Offer.DoesNotExist:
+            logger.warning(f"Offer {transaction.offer.id} not found or inactive for partner transaction")
+            return {
+                'success': False,
+                'error': 'Offer not found or inactive'
+            }
+        
+        # Validate amount matches offer price
+        if transaction.offer.price != transaction.amount:
+            logger.warning(f"Amount mismatch for offer {transaction.offer.id}: expected {transaction.offer.price}, got {transaction.amount}")
+            return {
+                'success': False,
+                'error': 'Amount does not match offer price'
+            }
+        
+        # Generate a unique reference
+        reference = f"REF-{uuid.uuid4().hex[:12].upper()}"
+        partner_transaction_id = str(uuid.uuid4())
+        
+        # Create partner transaction record
+        partner_transaction = PartnerTransaction.objects.create(
+            transaction_id=partner_transaction_id,
+            user=user,
+            offer=offer,
+            amount=transaction.amount,
+            reference=reference,
+            status='SUCCESS'  # Direct creation means immediate success
         )
-        logger.info(f"Received response with status {response.status_code} for transaction {transaction.transaction_id}")
-        if response.status_code != 201:
-            logger.error(f"Error response content: {response.text}")
         
-        # Check if request was successful
-        if response.status_code == 201:
-            try:
-                result = response.json()
-                logger.info(f"Successfully parsed JSON response for transaction {transaction.transaction_id}: {result}")
-                reference = result.get('reference')
-                
-                # Validate the reference
-                if reference and validate_partner_transaction(reference):
-                    logger.info(f"Reference {reference} validated successfully for transaction {transaction.transaction_id}")
-                    return {
-                        'success': True,
-                        'reference': reference,
-                        'data': result
-                    }
-                else:
-                    logger.warning(f"Invalid reference received from partner system for transaction {transaction.transaction_id}")
-                    return {
-                        'success': False,
-                        'error': 'Invalid reference received from partner system'
-                    }
-            except json.JSONDecodeError:
-                # Handle case where response is not JSON
-                logger.error(f"Invalid JSON response from partner system for transaction {transaction.transaction_id}")
-                return {
-                    'success': False,
-                    'error': 'Invalid response format from partner system'
+        logger.info(f"Created partner transaction {partner_transaction_id} with reference {reference}")
+        
+        # Validate the reference by retrieving it
+        if validate_partner_transaction(reference):
+            logger.info(f"Reference {reference} validated successfully for transaction {transaction.transaction_id}")
+            return {
+                'success': True,
+                'reference': reference,
+                'data': {
+                    'reference': reference,
+                    'transaction_id': partner_transaction_id,
+                    'status': 'SUCCESS',
+                    'message': 'Activation completed successfully'
                 }
+            }
         else:
-            # Handle HTTP error responses
-            try:
-                error_data = response.json()
-                logger.error(f"Partner system error for transaction {transaction.transaction_id}: {response.status_code} - {error_data}")
-                return {
-                    'success': False,
-                    'error': f"Partner system error: {response.status_code} - {error_data.get('error', 'Unknown error')}"
-                }
-            except json.JSONDecodeError:
-                # Handle case where error response is not JSON
-                logger.error(f"Partner system error with non-JSON response for transaction {transaction.transaction_id}: {response.status_code} - {response.text}")
-                return {
-                    'success': False,
-                    'error': f"Partner system error: {response.status_code} - {response.text}"
-                }
+            logger.warning(f"Invalid reference generated for partner transaction {partner_transaction_id}")
+            return {
+                'success': False,
+                'error': 'Failed to validate generated reference'
+            }
                 
-    except Timeout:
-        logger.error(f"Timeout calling partner system for transaction {transaction.transaction_id}")
-        return {
-            'success': False,
-            'error': 'Timeout calling partner activation system'
-        }
-    except ConnectionError:
-        logger.error(f"Connection error calling partner system for transaction {transaction.transaction_id}")
-        return {
-            'success': False,
-            'error': 'Connection error with partner activation system'
-        }
-    except RequestException as e:
-        logger.error(f"Request error calling partner system for transaction {transaction.transaction_id}: {str(e)}")
-        return {
-            'success': False,
-            'error': f'Request error: {str(e)}'
-        }
     except Exception as e:
-        logger.error(f"Unexpected error calling partner system for transaction {transaction.transaction_id}: {str(e)}", exc_info=True)
+        logger.error(f"Unexpected error creating partner transaction for {transaction.transaction_id}: {str(e)}", exc_info=True)
         return {
             'success': False,
             'error': f'Unexpected error: {str(e)}'
@@ -285,43 +254,18 @@ def validate_partner_transaction(reference):
     """
     try:
         logger.info(f"Validating partner transaction with reference {reference}")
-        headers = {
-            'Content-Type': 'application/json',
-            'User-Agent': 'Offers-API/1.0'
-        }
         
-        # Make request to validate the reference
-        validation_url = f"{PARTNER_VALIDATION_URL}/{reference}/"
-        logger.info(f"Making GET request to {validation_url}")
-        # logger.info(f"Full validation URL: {validation_url}")
-        # logger.info(f"PARTNER_VALIDATION_URL: {PARTNER_VALIDATION_URL}")
-        # logger.info(f"Reference: {reference}")
-        # logger.info(f"Headers: {headers}")
-        response = requests.get(
-            validation_url,
-            headers=headers,
-            timeout=PARTNER_SYSTEM_TIMEOUT
-        )
-        logger.info(f"Received validation response with status {response.status_code} for reference {reference}")
-        logger.info(f"Response content: {response.text}")
-        if response.status_code != 200:
-            logger.error(f"Error validating response content: {response.text}")
+        # Look up the transaction by reference
+        partner_transaction = PartnerTransaction.objects.get(reference=reference)
         
-        # Check if request was successful
-        if response.status_code == 200:
-            try:
-                result = response.json()
-                logger.info(f"Validation response for reference {reference}: {result}")
-                is_valid = result.get('is_valid', False)
-                logger.info(f"Reference {reference} validation result: {is_valid}")
-                return is_valid
-            except json.JSONDecodeError:
-                logger.error(f"Invalid JSON response when validating reference {reference}")
-                return False
-        else:
-            logger.error(f"Error validating reference {reference}: {response.status_code}")
-            return False
+        # Return validation result
+        is_valid = partner_transaction is not None
+        logger.info(f"Reference {reference} validation result: {is_valid}")
+        return is_valid
                 
+    except PartnerTransaction.DoesNotExist:
+        logger.error(f"Partner transaction with reference {reference} not found")
+        return False
     except Exception as e:
         logger.error(f"Error validating partner transaction {reference}: {str(e)}", exc_info=True)
         return False
@@ -349,32 +293,25 @@ def send_notification(email, subject, message):
 @shared_task
 def check_expiring_offers():
     """
-    Task to check for expiring offers and notify users.
-    This would be scheduled to run daily.
+    Check for offers that are about to expire and send notifications.
     """
-    logger.info("Starting check for expiring offers")
-    from datetime import datetime, timedelta
-    from django.contrib.auth.models import User
+    from django.utils import timezone
+    from offers.models import UserOffer
     
-    # Get offers that will expire in the next 3 days
-    threshold_date = datetime.now() + timedelta(days=3)
+    # Get offers expiring in the next 3 days
+    threshold_date = timezone.now() + timezone.timedelta(days=3)
     
     expiring_offers = UserOffer.objects.filter(
         is_active=True,
         expiration_date__lte=threshold_date,
-        expiration_date__gte=datetime.now()
+        expiration_date__gte=timezone.now()
     ).select_related('user', 'offer')
     
-    logger.info(f"Found {expiring_offers.count()} expiring offers")
-    
     for user_offer in expiring_offers:
-        logger.info(f"Sending expiration notification to user {user_offer.user.id} for offer {user_offer.offer.id}")
+        # Send notification to user
         send_notification(
             user_offer.user.email,
             "Offer Expiring Soon",
-            f"Your offer {user_offer.offer.name} will expire on {user_offer.expiration_date}. "
-            f"Renew it now to continue enjoying the service."
+            f"Your offer '{user_offer.offer.name}' is expiring on {user_offer.expiration_date.strftime('%Y-%m-%d')}."
         )
-    
-    logger.info(f"Completed check for expiring offers. Notified {expiring_offers.count()} users")
-    return f"Notified {expiring_offers.count()} users about expiring offers"
+        logger.info(f"Sent expiration notification for user offer {user_offer.id}")
