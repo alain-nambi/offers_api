@@ -1,11 +1,11 @@
-import { DollarSign, TrendingUp, Ticket, Clock } from "lucide-react";
+import { DollarSign, TrendingUp, Ticket, Clock, Package } from "lucide-react";
 
 interface MetricCardProps {
   title: string;
   value: string;
   change: string;
   trend: "up" | "down";
-  icon: "revenue" | "deals" | "tickets" | "time";
+  icon: "revenue" | "deals" | "tickets" | "time" | "package";
 }
 
 const icons = {
@@ -13,6 +13,7 @@ const icons = {
   deals: TrendingUp,
   tickets: Ticket,
   time: Clock,
+  package: Package,
 };
 
 export function MetricCard({ title, value, change, trend, icon }: MetricCardProps) {

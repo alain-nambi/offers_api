@@ -1,4 +1,3 @@
-import React from "react";
 // Import routing components from react-router-dom
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 // Import authentication context provider
@@ -8,6 +7,7 @@ import { ProtectedRoute } from '@/services/protected-route';
 // Import page components
 import LoginPage from '@/components/auth/login-page';
 import DashboardPage from "@/components/dashboard/dashboard";
+import OffersPage from "@/components/offers/offers-page";
 
 import { Toaster } from "react-hot-toast";
 
@@ -30,6 +30,15 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              } 
+            />
+            {/* Offers route - protected and requires authentication */}
+            <Route 
+              path="/offers" 
+              element={
+                <ProtectedRoute>
+                  <OffersPage />
                 </ProtectedRoute>
               } 
             />
