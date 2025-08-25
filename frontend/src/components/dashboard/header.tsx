@@ -10,7 +10,7 @@ export function Header() {
   const { user } = useAuth();
 
   return (
-    <header className="border-b px-6 py-4 sticky top-0 z-4 bg-background/70 backdrop-blur">
+    <header className="border-b px-6 py-4 sticky top-0 z-4 bg-background/80 backdrop-blur">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
         <div className="flex items-center space-x-4">
