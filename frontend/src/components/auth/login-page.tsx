@@ -4,16 +4,15 @@ import { useAuth } from '@/services/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import toast, { Toaster } from 'react-hot-toast';
 
 // LoginPage component for user authentication
 const LoginPage: React.FC = () => {
   // State for form fields
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  // State for loading and error handling
+  // State for loading
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   // State for password visibility
   const [showPassword, setShowPassword] = useState(false);
   
@@ -26,22 +25,44 @@ const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
 
     try {
-      // Login using the auth context
       await login(username, password);
-      
-      // Redirect to dashboard after successful login
       navigate('/dashboard', { replace: true });
     } catch (err: any) {
       console.error('Login error:', err);
-      // Handle different types of errors
-      if (err.response?.status === 401) {
-        setError('Invalid username or password');
+      let errorMessage = 'An unexpected error occurred';
+
+      if (err.response) {
+        // Server responded with a status outside 2xx range
+        switch (err.response.status) {
+          case 401:
+            errorMessage = 'Invalid username or password';
+            break;
+          case 500:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          default:
+            errorMessage = err.response.data?.detail ||
+              err.response.data?.message ||
+              err.response.data?.error ||
+              `Error: ${err.response.status}`;
+        }
+      } else if (err.request) {
+        // No response was received
+        errorMessage = 'Network error. Please check your connection.';
       } else {
-        setError(err.response?.data?.error || 'An error occurred during login');
+        // Something happened in setting up the request
+        errorMessage = err.message || 'An unknown error occurred';
       }
+
+      toast.error(errorMessage, {
+        position: 'top-center',
+      });
+
+      // Clear username and password field on error
+      setPassword('');
+      setUsername('');
     } finally {
       setLoading(false);
     }
@@ -52,7 +73,6 @@ const LoginPage: React.FC = () => {
     setShowPassword(!showPassword);
   };
 
-  // Render the login form
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
@@ -69,13 +89,6 @@ const LoginPage: React.FC = () => {
             </div>
             
             <form onSubmit={handleSubmit}>
-              {/* Display error message if exists */}
-              {error && (
-                <Alert variant="destructive" className="mb-6 rounded-lg">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
               <div className="space-y-5">
                 {/* Username input field */}
                 <div className="space-y-2">

@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { authApi } from './auth';
+import api from './api';
 
 // User interface defining the structure of user data
 interface User {
@@ -67,10 +68,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Get user profile and set user state
       const userData = await authApi.profile();
       setUser(userData);
-    } catch (error) {
+    } catch (error: any) {
       // Remove any existing tokens on failed login
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      
+      // If it's a 401 error, re-throw it so the login page can handle it
+      if (error.response?.status === 401) {
+        throw error;
+      }
+      
+      // For other errors, also throw
       throw error;
     }
   };
@@ -91,6 +99,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('refresh_token');
     // Clear user state
     setUser(null);
+    
+    // Update the axios instance to remove the Authorization header
+    delete api.defaults.headers.common['Authorization'];
   };
 
   // Check if user is authenticated

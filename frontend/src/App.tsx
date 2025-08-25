@@ -9,6 +9,8 @@ import { ProtectedRoute } from '@/services/protected-route';
 import LoginPage from '@/components/auth/login-page';
 import DashboardPage from "@/components/dashboard/dashboard";
 
+import { Toaster } from "react-hot-toast";
+
 // Main App component
 export default function App() {
   return (
@@ -16,6 +18,7 @@ export default function App() {
     <Router>
       {/* Wrap the app with AuthProvider to provide authentication context */}
       <AuthProvider>
+        <Toaster />
         <div className="App">
           {/* Define routes for the application */}
           <Routes>
