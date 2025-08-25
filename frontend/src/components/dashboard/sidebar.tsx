@@ -50,8 +50,8 @@ export function Sidebar() {
   ];
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
-      <div className="flex flex-col flex-grow border-r bg-sidebar text-sidebar-foreground">
+    <div className="w-64 bg-white border-r border-gray-200 fixed h-full z-50">
+      <div className="flex flex-col flex-grow border-r bg-sidebar text-sidebar-foreground h-full">
         <div className="flex items-center h-16 px-4 border-b">
           <h1 className="text-xl font-bold">Offer Manager</h1>
         </div>
