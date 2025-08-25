@@ -6,6 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from account.models import Account
 import json
 
 
@@ -58,6 +59,18 @@ def profile_view(request):
     Retrieve information of the connected user.
     """
     user = request.user
+    
+    # Get user account information
+    try:
+        account = Account.objects.get(user=user)
+        account_data = {
+            'balance': float(account.balance)
+        }
+    except Account.DoesNotExist:
+        account_data = {
+            'balance': 0.0
+        }
+    
     return Response({
         'id': user.id,
         'username': user.username,
@@ -65,6 +78,7 @@ def profile_view(request):
         'first_name': user.first_name,
         'last_name': user.last_name,
         'date_joined': user.date_joined,
+        'account': account_data
     }, status=status.HTTP_200_OK)
 
 

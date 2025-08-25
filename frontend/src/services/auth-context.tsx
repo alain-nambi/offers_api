@@ -3,6 +3,11 @@ import type { ReactNode } from 'react';
 import { authApi } from './auth';
 import api from './api';
 
+// Account interface
+interface Account {
+  balance: number;
+}
+
 // User interface defining the structure of user data
 interface User {
   id: number;
@@ -11,6 +16,7 @@ interface User {
   first_name: string;
   last_name: string;
   date_joined: string;
+  account?: Account;
 }
 
 // AuthContextType interface defining the structure of the authentication context
