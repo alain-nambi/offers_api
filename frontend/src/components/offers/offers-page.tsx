@@ -3,7 +3,7 @@ import OfferActivation from '@/components/offers/offer-activation';
 
 const OffersPage: React.FC = () => {
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto">
       <OfferActivation />
     </div>
   );
