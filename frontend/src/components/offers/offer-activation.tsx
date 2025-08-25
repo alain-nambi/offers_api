@@ -126,7 +126,7 @@ const OfferActivation: React.FC = () => {
       <Sidebar />
 
       <motion.div
-        className="flex-1 flex flex-col p-6 space-y-6"
+        className="flex-1 flex flex-col p-6 space-y-6 ml-64"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.1, duration: 0.3 }}

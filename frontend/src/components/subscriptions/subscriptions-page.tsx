@@ -100,7 +100,7 @@ const SubscriptionsPage: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="flex-1 flex flex-col p-6 space-y-6"
+        className="flex-1 flex flex-col p-6 space-y-6 ml-64"
       >
         <div className="flex justify-between items-center mb-8">
           <div>
