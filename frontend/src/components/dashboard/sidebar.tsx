@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/services/auth-context';
-import { ScrollArea } from '../ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Sidebar component for navigation
 export function Sidebar() {
@@ -56,8 +56,9 @@ export function Sidebar() {
           <h1 className="text-xl font-bold">Offer Manager</h1>
         </div>
         <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto">
+          
           {/* Navigation */}
-        <ScrollArea className="h-100 w-100%">
+          <ScrollArea className="h-100 w-100%">
           <nav className="flex-1 px-2 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -81,6 +82,7 @@ export function Sidebar() {
           </nav>
           </ScrollArea>
         </div>
+
         {/* Bottom */}
         <div className="p-4 border-t space-y-2">
           <Button variant="ghost" className="w-full justify-start px-3 py-2">
