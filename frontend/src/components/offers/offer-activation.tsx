@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -116,125 +117,157 @@ const OfferActivation: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="flex h-screen bg-gray-50"
+    >
       <Sidebar />
 
-      <div className="flex-1 flex flex-col p-6 space-y-6">
-        <div>
+      <motion.div
+        className="flex-1 flex flex-col p-6 space-y-6"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.1, duration: 0.3 }}
+      >
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.3 }}
+        >
           <h2 className="text-2xl font-bold tracking-tight">Available Offers</h2>
           <p className="text-muted-foreground">
             Activate offers to start using our services. Your current balance: {user?.account?.balance ? formatCurrency(user.account.balance) : 'N/A'}
           </p>
-        </div>
+        </motion.div>
 
         {offers.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No offers available</h3>
-              <p className="text-muted-foreground text-center">
-                There are currently no offers available. Please check back later.
-              </p>
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.3 }}
+          >
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No offers available</h3>
+                <p className="text-muted-foreground text-center">
+                  There are currently no offers available. Please check back later.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {offers.map((offer) => {
+          <motion.div 
+            className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.3 }}
+          >
+            {offers.map((offer, index) => {
               const isActivating = activating === offer.id;
               const status = Object.values(activationStatus).find(
                 (s: any) => s.offer_id === offer.id.toString()
               );
 
               return (
-                <Card key={offer.id} className="flex flex-col">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-xl">{offer.name}</CardTitle>
-                        <CardDescription>{offer.description}</CardDescription>
-                      </div>
-                      <Badge variant={offer.is_active ? "default" : "secondary"}>
-                        {offer.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Price</span>
-                        <span className="font-bold text-lg">{formatCurrency(offer.price)}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Duration</span>
-                        <span className="font-medium">{offer.duration_days} days</span>
-                      </div>
-                      <Separator />
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        <span>Created: {formatDate(offer.created_at)}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex flex-col">
-                    {status ? (
-                      <div className="w-full space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Status:</span>
-                          <div className="flex items-center">
-                            {status.status === 'PENDING' && (
-                              <>
-                                <Clock className="h-4 w-4 text-yellow-500 mr-1" />
-                                <span className="text-yellow-500">Processing</span>
-                              </>
-                            )}
-                            {status.status === 'SUCCESS' && (
-                              <>
-                                <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
-                                <span className="text-green-500">Activated</span>
-                              </>
-                            )}
-                            {status.status === 'FAILED' && (
-                              <>
-                                <AlertCircle className="h-4 w-4 text-red-500 mr-1" />
-                                <span className="text-red-500">Failed</span>
-                              </>
-                            )}
-                          </div>
+                <motion.div
+                  key={offer.id}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.1 * index, duration: 0.3 }}
+                >
+                  <Card className="flex flex-col h-full">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-xl">{offer.name}</CardTitle>
+                          <CardDescription>{offer.description}</CardDescription>
                         </div>
-                        {status.status === 'PENDING' && (
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Checking activation status...
-                          </div>
-                        )}
+                        <Badge variant={offer.is_active ? "default" : "secondary"}>
+                          {offer.is_active ? "Active" : "Inactive"}
+                        </Badge>
                       </div>
-                    ) : (
-                      <Button
-                        className="w-full"
-                        onClick={() => activateOffer(offer.id)}
-                        disabled={isActivating || !offer.is_active}
-                      >
-                        {isActivating ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Activating...
-                          </>
-                        ) : (
-                          <>
-                            <CreditCard className="mr-2 h-4 w-4" />
-                            Activate Offer
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </CardFooter>
-                </Card>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Price</span>
+                          <span className="font-bold text-lg">{formatCurrency(offer.price)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Duration</span>
+                          <span className="font-medium">{offer.duration_days} days</span>
+                        </div>
+                        <Separator />
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Calendar className="mr-2 h-4 w-4" />
+                          <span>Created: {formatDate(offer.created_at)}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter className="flex flex-col">
+                      {status ? (
+                        <div className="w-full space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Status:</span>
+                            <div className="flex items-center">
+                              {status.status === 'PENDING' && (
+                                <>
+                                  <Clock className="h-4 w-4 text-yellow-500 mr-1" />
+                                  <span className="text-yellow-500">Processing</span>
+                                </>
+                              )}
+                              {status.status === 'SUCCESS' && (
+                                <>
+                                  <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
+                                  <span className="text-green-500">Activated</span>
+                                </>
+                              )}
+                              {status.status === 'FAILED' && (
+                                <>
+                                  <AlertCircle className="h-4 w-4 text-red-500 mr-1" />
+                                  <span className="text-red-500">Failed</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          {status.status === 'PENDING' && (
+                            <div className="flex items-center text-sm text-muted-foreground">
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Checking activation status...
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <Button
+                          className="w-full"
+                          onClick={() => activateOffer(offer.id)}
+                          disabled={isActivating || !offer.is_active}
+                        >
+                          {isActivating ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Activating...
+                            </>
+                          ) : (
+                            <>
+                              <CreditCard className="mr-2 h-4 w-4" />
+                              Activate Offer
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </CardFooter>
+                  </Card>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

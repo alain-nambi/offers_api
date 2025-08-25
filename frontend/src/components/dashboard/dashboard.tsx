@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { MetricCard } from "@/components/dashboard/metric-card";
@@ -9,29 +10,39 @@ import BalanceCard from "@/components/dashboard/balance-card";
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function DashboardPage() {
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
 
-  // Simulate loading delay for smoother transition
-  useEffect(() => {
-    // Add a 250ms delay for smoother page transition
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 250);
+  // // Simulate loading delay for smoother transition
+  // useEffect(() => {
+  //   // Add a 250ms delay for smoother page transition
+  //   const timer = setTimeout(() => {
+  //     setLoading(false);
+  //   }, 250);
 
-    return () => clearTimeout(timer);
-  }, []);
+  //   return () => clearTimeout(timer);
+  // }, []);
 
-  if (loading) {
-    return <LoadingSpinner fullScreen message="Loading dashboard..." />;
-  }
+  // if (loading) {
+  //   return <LoadingSpinner fullScreen message="Loading dashboard..." />;
+  // }
 
   return (
-    <div className="flex h-screen bg-gray-50 animate-in fade-in duration-300">
+    <motion.div 
+      className="flex h-screen bg-gray-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <Header />
         <main className="flex-1 p-6 overflow-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.3 }}
+          >
             <BalanceCard />
             <MetricCard 
               title="Revenue" 
@@ -54,18 +65,29 @@ export default function DashboardPage() {
               icon="tickets" 
               trend="down"
             />
-          </div>
+          </motion.div>
           
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <motion.div 
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.3 }}
+          >
             <div className="lg:col-span-2">
               <RevenueChart />
             </div>
             <ProCard />
-          </div>
+          </motion.div>
 
-          <TicketChart />
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.3 }}
+          >
+            <TicketChart />
+          </motion.div>
         </main>
       </div>
-    </div>
+    </motion.div>
   );
 }
