@@ -9,7 +9,7 @@ import { ProtectedRoute } from '@/services/protected-route';
 import LoginPage from '@/components/auth/login-page';
 import DashboardPage from "@/components/dashboard/dashboard";
 import OffersPage from "@/components/offers/offers-page";
-import { SubscriptionsPage } from "@/components/subscriptions";
+import SubscriptionsPage from "@/components/subscriptions/subscriptions-page";
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { PageTransition } from '@/components/ui/page-transition';
 
