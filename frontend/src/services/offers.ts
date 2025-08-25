@@ -56,7 +56,7 @@ export const offersApi = {
 
   // Activate an offer
   activateOffer: async (offerId: number): Promise<ActivationResponse> => {
-    const response = await api.post<ActivationResponse>('/activation/activate/', { offer_id: offerId });
+    const response = await api.post<ActivationResponse>('/activation/', { offer_id: offerId });
     return response.data;
   },
 
