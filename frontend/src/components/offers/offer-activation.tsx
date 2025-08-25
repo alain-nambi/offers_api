@@ -127,15 +127,9 @@ const OfferActivation: React.FC = () => {
 
       <motion.div
         className="flex-1 flex flex-col p-6 space-y-6 ml-64"
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.1, duration: 0.3 }}
       >
         <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.3 }}
-          className="fixed top-0 left-64 right-0 bg-white p-4 shadow"
+          className="fixed top-0 left-64 right-0 bg-white p-4 shadow z-10"
         >
           <h2 className="text-2xl font-bold tracking-tight">Available Offers</h2>
           <p className="text-muted-foreground">
