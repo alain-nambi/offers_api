@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import OfferActivation from '@/components/offers/offer-activation';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 const OffersPage: React.FC = () => {
   // const [loading, setLoading] = useState(true);

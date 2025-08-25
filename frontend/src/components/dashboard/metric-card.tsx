@@ -20,6 +20,8 @@ export function MetricCard({ title, value, change, trend, icon }: MetricCardProp
   const Icon = icons[icon];
   const isPositive = trend === "up";
 
+  console.log(isPositive)
+
   return (
     <div className="flex flex-col justify-between bg-white p-6 rounded-lg border shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-2">
