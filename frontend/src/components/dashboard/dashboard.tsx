@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { MetricCard } from "@/components/dashboard/metric-card";
@@ -5,14 +6,31 @@ import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { TicketChart } from "@/components/dashboard/ticket-chart";
 import { ProCard } from "@/components/dashboard/pro-card";
 import BalanceCard from "@/components/dashboard/balance-card";
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function DashboardPage() {
+  const [loading, setLoading] = useState(true);
+
+  // Simulate loading delay for smoother transition
+  useEffect(() => {
+    // Add a 250ms delay for smoother page transition
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return <LoadingSpinner fullScreen message="Loading dashboard..." />;
+  }
+
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 animate-in fade-in duration-300">
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <Header />
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 overflow-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <BalanceCard />
             <MetricCard 

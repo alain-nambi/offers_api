@@ -25,22 +25,22 @@ export default function App() {
             {/* Login route - accessible to everyone */}
             <Route path="/login" element={<LoginPage />} />
             {/* Dashboard route - protected and requires authentication */}
-            <Route 
-              path="/dashboard" 
+            <Route
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <DashboardPage />
                 </ProtectedRoute>
-              } 
+              }
             />
             {/* Offers route - protected and requires authentication */}
-            <Route 
-              path="/offers" 
+            <Route
+              path="/offers"
               element={
                 <ProtectedRoute>
                   <OffersPage />
                 </ProtectedRoute>
-              } 
+              }
             />
             {/* Root route - redirect to dashboard */}
             <Route path="/" element={<Navigate to="/dashboard" />} />
