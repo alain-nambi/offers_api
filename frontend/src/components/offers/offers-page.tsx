@@ -24,7 +24,7 @@ const OffersPage: React.FC = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="container mx-auto"
+      className="mx-auto"
     >
       <OfferActivation />
     </motion.div>
