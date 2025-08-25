@@ -1,3 +1,4 @@
+import logging
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -66,6 +67,8 @@ def profile_view(request):
         account_data = {
             'balance': float(account.balance)
         }
+        
+        logging.info(f"Retrieved account for user {user.username}: {account_data}")
     except Account.DoesNotExist:
         account_data = {
             'balance': 0.0

@@ -11,8 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 @api_view(['POST'])
-# Remove authentication_classes and csrf_exempt to use default authentication
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
+@authentication_classes([])
+@csrf_exempt
 def activate_offer(request):
     """
     Partner API endpoint to initiate an offer activation.
@@ -66,8 +67,9 @@ def activate_offer(request):
 
 
 @api_view(['GET'])
-# Remove authentication_classes and csrf_exempt to use default authentication
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
+@authentication_classes([])
+@csrf_exempt
 def validate_transaction(request, reference):
     """
     Partner API endpoint to validate a transaction by reference.
