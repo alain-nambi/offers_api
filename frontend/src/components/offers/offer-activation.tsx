@@ -18,13 +18,14 @@ import {
 } from 'lucide-react';
 
 import { Sidebar } from '../dashboard/sidebar';
+import { authApi } from '@/services/auth';
 
 const OfferActivation: React.FC = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<number | null>(null);
   const [activationStatus, setActivationStatus] = useState<Record<string, any>>({});
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
 
   // Load offers on component mount
   useEffect(() => {
@@ -79,6 +80,10 @@ const OfferActivation: React.FC = () => {
           clearInterval(interval);
 
           if (status.status === 'SUCCESS') {
+            // Refresh user data to update balance
+            const updatedUser = await authApi.profile();
+            setUser(updatedUser);
+
             toast.success('Offer activated successfully!');
           } else {
             toast.error('Offer activation failed');
@@ -151,6 +156,7 @@ const OfferActivation: React.FC = () => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.3 }}
+            className='mt-22'
           >
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
