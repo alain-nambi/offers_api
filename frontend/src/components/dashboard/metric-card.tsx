@@ -21,15 +21,15 @@ export function MetricCard({ title, value, change, trend, icon }: MetricCardProp
   const isPositive = trend === "up";
 
   return (
-    <div className="bg-white p-6 rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+    <div className="flex flex-col justify-between bg-white p-6 rounded-lg border shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium text-gray-600">{title}</span>
         <Icon className="w-5 h-5 text-gray-400" />
       </div>
       <div className="text-3xl font-bold text-gray-900">{value}</div>
-      <div className={`text-sm mt-1 ${isPositive ? "text-green-600" : "text-red-600"}`}>
+      <p className="text-xs text-muted-foreground mt-2">
         {change}
-      </div>
+      </p>
     </div>
   );
 }

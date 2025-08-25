@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { motion } from 'framer-motion';
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
@@ -7,24 +7,23 @@ import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { TicketChart } from "@/components/dashboard/ticket-chart";
 import { ProCard } from "@/components/dashboard/pro-card";
 import BalanceCard from "@/components/dashboard/balance-card";
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { subscriptionsApi } from '@/services/subscriptions';
 
 export default function DashboardPage() {
-  // const [loading, setLoading] = useState(true);
+  const [subscriptionNumber, setSubscriptionNumber] = useState<number | 0>(0);
 
-  // // Simulate loading delay for smoother transition
-  // useEffect(() => {
-  //   // Add a 250ms delay for smoother page transition
-  //   const timer = setTimeout(() => {
-  //     setLoading(false);
-  //   }, 250);
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      try {
+        const subscriptions = await subscriptionsApi.getSubscriptions();
+        setSubscriptionNumber(subscriptions.length);
+      } catch (error) {
+        console.error('Error fetching subscriptions:', error);
+      }
+    };
 
-  //   return () => clearTimeout(timer);
-  // }, []);
-
-  // if (loading) {
-  //   return <LoadingSpinner fullScreen message="Loading dashboard..." />;
-  // }
+    fetchSubscriptions();
+  }, []);
 
   return (
     <motion.div 
@@ -53,9 +52,9 @@ export default function DashboardPage() {
             />
             <MetricCard 
               title="Subscriptions" 
-              value="1,240" 
-              change="+18.2% from last month" 
-              icon="package" 
+              value={subscriptionNumber.toString()}
+              change="Your current active subscriptions" 
+              icon="package"
               trend="up"
             />
             <MetricCard 
