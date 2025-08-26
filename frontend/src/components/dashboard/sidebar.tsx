@@ -8,7 +8,8 @@ import {
   LogOut,
   ShoppingBag,
   HelpCircle,
-  Receipt
+  Receipt,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/services/auth-context';
@@ -44,14 +45,14 @@ export function Sidebar() {
       icon: Receipt,
     },
     {
+      title: 'Reports',
+      href: '/reports',
+      icon: FileText,
+    },
+    {
       title: 'Tickets',
       href: '/tickets',
       icon: Ticket,
-    },
-    {
-      title: 'Reports',
-      href: '/reports',
-      icon: BarChart3,
     },
   ];
 
