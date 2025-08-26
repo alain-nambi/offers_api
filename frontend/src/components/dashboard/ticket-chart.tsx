@@ -1,15 +1,54 @@
+import React, { useState, useEffect } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-
-const data = [
-  { name: "Jan", created: 45, solved: 38 },
-  { name: "Feb", created: 52, solved: 48 },
-  { name: "Mar", created: 38, solved: 42 },
-  { name: "Apr", created: 65, solved: 55 },
-  { name: "May", created: 48, solved: 50 },
-  { name: "Jun", created: 55, solved: 60 },
-];
+import { dashboardApi } from '@/services/dashboard';
+import type { TicketDataPoint } from '@/services/dashboard';
+import { Loader2 } from 'lucide-react';
 
 export function TicketChart() {
+  const [data, setData] = useState<TicketDataPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const ticketData = await dashboardApi.getTicketData();
+        setData(ticketData);
+      } catch (err) {
+        setError('Failed to load ticket data');
+        console.error('Error loading ticket data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-white p-6 rounded-lg border shadow-sm mt-6 h-64 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="mt-2 text-muted-foreground">Loading ticket data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white p-6 rounded-lg border shadow-sm mt-6 h-64 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-2">Error loading data</p>
+          <p className="text-muted-foreground text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white p-6 rounded-lg border shadow-sm mt-6">
       <div className="flex items-center justify-between mb-6">

@@ -1,21 +1,54 @@
+import React, { useState, useEffect } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-
-const data = [
-  { name: "Jan", revenue: 4000 },
-  { name: "Feb", revenue: 3000 },
-  { name: "Mar", revenue: 5000 },
-  { name: "Apr", revenue: 4500 },
-  { name: "May", revenue: 6000 },
-  { name: "Jun", revenue: 5500 },
-  { name: "Jul", revenue: 7000 },
-  { name: "Aug", revenue: 6500 },
-  { name: "Sep", revenue: 8000 },
-  { name: "Oct", revenue: 7500 },
-  { name: "Nov", revenue: 9000 },
-  { name: "Dec", revenue: 8500 },
-];
+import { dashboardApi } from '@/services/dashboard';
+import type { RevenueDataPoint } from '@/services/dashboard';
+import { Loader2 } from 'lucide-react';
 
 export function RevenueChart() {
+  const [data, setData] = useState<RevenueDataPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const revenueData = await dashboardApi.getRevenueData();
+        setData(revenueData);
+      } catch (err) {
+        setError('Failed to load revenue data');
+        console.error('Error loading revenue data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-white p-6 rounded-lg border shadow-sm h-80 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="mt-2 text-muted-foreground">Loading revenue data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white p-6 rounded-lg border shadow-sm h-80 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-2">Error loading data</p>
+          <p className="text-muted-foreground text-sm">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white p-6 rounded-lg border shadow-sm">
       <div className="flex items-center justify-between mb-6">
@@ -34,6 +67,7 @@ export function RevenueChart() {
             <Tooltip 
               contentStyle={{ background: '#111', border: 'none', borderRadius: '8px' }}
               labelStyle={{ color: '#fff' }}
+              formatter={(value) => [`$${value}`, 'Revenue']}
             />
             <Line 
               type="monotone" 

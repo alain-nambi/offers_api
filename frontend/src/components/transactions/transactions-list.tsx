@@ -50,7 +50,19 @@ const TransactionsList: React.FC = () => {
 
   // Load transactions
   useEffect(() => {
-    loadTransactions();
+    let isMounted = true;
+    
+    const fetchTransactions = async () => {
+      if (isMounted) {
+        await loadTransactions();
+      }
+    };
+    
+    fetchTransactions();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [currentPage, statusFilter, pageSize]);
 
   const loadTransactions = async () => {
@@ -59,13 +71,19 @@ const TransactionsList: React.FC = () => {
       setError(null);
       
       // In a real implementation, this would call an API
-      const data: PaginatedResponse<Transaction> = await transactionsApi.getTransactions(currentPage, pageSize);
+      const data: PaginatedResponse<Transaction> = await transactionsApi.getTransactions(
+        currentPage, 
+        pageSize, 
+        statusFilter
+      );
       
-      setTransactions(data.results);
-      setTotalCount(data.count);
-      setTotalPages(Math.ceil(data.count / pageSize));
+      if (data) {
+        setTransactions(data.results);
+        setTotalCount(data.count);
+        setTotalPages(Math.ceil(data.count / pageSize));
+      }
     } catch (err: any) {
-      setError('Failed to load transactions');
+      setError('Failed to load transactions. Please try again later.');
       console.error('Error loading transactions:', err);
     } finally {
       setLoading(false);
@@ -183,7 +201,10 @@ const TransactionsList: React.FC = () => {
               {error ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <div className="text-red-500 mb-2">Error loading transactions</div>
-                  <Button onClick={loadTransactions}>Retry</Button>
+                  <Button onClick={loadTransactions}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Retry
+                  </Button>
                 </div>
               ) : loading ? (
                 <div className="flex justify-center items-center py-12">
