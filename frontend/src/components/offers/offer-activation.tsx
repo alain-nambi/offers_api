@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/services/auth-context';
 import { offersApi } from '@/services/offers';
-import type { Offer } from '@/services/offers';
+import type { Offer, PaginatedResponse } from '@/services/offers';
 import { toast } from 'react-hot-toast';
 import {
   CheckCircle,
@@ -20,23 +20,35 @@ import {
 import { Sidebar } from '../dashboard/sidebar';
 import { authApi } from '@/services/auth';
 
+// Helper function to format price
+const formatPrice = (price: number | string): string => {
+  const priceNum = typeof price === 'number' ? price : parseFloat(price) || 0;
+  return priceNum.toFixed(2);
+};
+
 const OfferActivation: React.FC = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<number | null>(null);
   const [activationStatus, setActivationStatus] = useState<Record<string, any>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const { user, setUser } = useAuth();
 
-  // Load offers on component mount
+  // Load offers on component mount and when page changes
   useEffect(() => {
     loadOffers();
-  }, []);
+  }, [currentPage]);
 
   // Load all available offers
   const loadOffers = async () => {
     try {
-      const data = await offersApi.listOffers();
-      setOffers(data);
+      setLoading(true);
+      const data: PaginatedResponse<Offer> = await offersApi.listOffers(currentPage, 5);
+      setOffers(data.results);
+      setTotalPages(Math.ceil(data.count / 5));
+      setTotalCount(data.count);
     } catch (error) {
       toast.error('Failed to load offers');
       console.error('Error loading offers:', error);
@@ -50,40 +62,43 @@ const OfferActivation: React.FC = () => {
     setActivating(offerId);
     try {
       const response = await offersApi.activateOffer(offerId);
-
-      // Show success message
-      toast.success('Activation started successfully!');
-
-      // Start polling for status
+      
+      // Update activation status
+      setActivationStatus(prev => ({
+        ...prev,
+        [response.transaction_id]: 'PENDING'
+      }));
+      
+      toast.success('Activation started! Check status in transactions.');
+      
+      // Refresh user data to update balance
+      const userData = await authApi.profile();
+      setUser(userData);
+      
+      // Poll for activation status
       pollActivationStatus(response.transaction_id);
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error || 'Failed to activate offer';
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.error || 'Failed to activate offer');
       console.error('Error activating offer:', error);
     } finally {
       setActivating(null);
     }
   };
 
-  // Poll for activation status
+  // Poll for activation status updates
   const pollActivationStatus = (transactionId: string) => {
     const interval = setInterval(async () => {
       try {
         const status = await offersApi.getActivationStatus(transactionId);
         setActivationStatus(prev => ({
           ...prev,
-          [transactionId]: status
+          [transactionId]: status.status
         }));
-
-        // Stop polling if activation is complete
+        
         if (status.status === 'SUCCESS' || status.status === 'FAILED') {
           clearInterval(interval);
-
+          
           if (status.status === 'SUCCESS') {
-            // Refresh user data to update balance
-            const updatedUser = await authApi.profile();
-            setUser(updatedUser);
-
             toast.success('Offer activated successfully!');
           } else {
             toast.error('Offer activation failed');
@@ -93,102 +108,68 @@ const OfferActivation: React.FC = () => {
         console.error('Error polling activation status:', error);
         clearInterval(interval);
       }
-    }, 3000); // Poll every 3 seconds
+    }, 3000);
   };
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
   };
 
-  // Format date
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  if (loading) {
+  if (loading && currentPage === 1) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="mt-2 text-muted-foreground">Loading offers...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="flex h-screen bg-gray-50"
-    >
+    <div className='flex h-screen bg-gray-50'>
       <Sidebar />
 
       <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
         className="flex-1 flex flex-col p-6 space-y-6 ml-64"
       >
-        <motion.div
-          className="fixed top-0 left-64 right-0 bg-white p-4 shadow z-10"
-        >
-          <div className='flex justify-between items-center'>
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">Available Offers</h2>
-              <p className="text-muted-foreground"> Activate offers to start using our services</p>
-            </div>
-
+        <div className="flex justify-between items-center mb-8 fixed top-0 left-64 right-0 bg-white p-4 shadow z-10">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Available Offers</h1>
             <p className="text-muted-foreground">
-             . Your current balance : 
-              <Badge variant={"outline"} className='text-md'>
-                {user?.account?.balance ? formatCurrency(user.account.balance) : 'N/A'}
-              </Badge>
+              Browse and activate available offers
             </p>
           </div>
-        </motion.div>
+          <Badge variant="secondary" className="text-sm">
+            {totalCount} Offer{totalCount !== 1 ? 's' : ''}
+          </Badge>
+        </div>
 
-        {offers.length === 0 ? (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.3 }}
-            className='mt-22'
-          >
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No offers available</h3>
-                <p className="text-muted-foreground text-center">
-                  There are currently no offers available. Please check back later.
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
+        {loading ? (
+          <div className="flex justify-center items-center flex-1">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
         ) : (
-          <motion.div
-            className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-22"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.3 }}
-          >
-            {offers.map((offer, index) => {
-              const isActivating = activating === offer.id;
-              const status = Object.values(activationStatus).find(
-                (s: any) => s.offer_id === offer.id.toString()
-              );
-
-              return (
+          <>
+            <motion.div
+              className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-20"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.3 }}
+            >
+              {offers.map((offer, index) => (
                 <motion.div
                   key={offer.id}
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.1 * index, duration: 0.3 }}
                 >
-                  <Card className="flex flex-col h-full">
+                  <Card className="h-full flex flex-col">
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div>
@@ -204,80 +185,85 @@ const OfferActivation: React.FC = () => {
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <span className="text-muted-foreground">Price</span>
-                          <span className="font-bold text-lg">{formatCurrency(offer.price)}</span>
+                          <span className="font-bold text-lg">${formatPrice(offer.price)}</span>
                         </div>
+
                         <div className="flex items-center justify-between">
                           <span className="text-muted-foreground">Duration</span>
                           <span className="font-medium">{offer.duration_days} days</span>
                         </div>
+
                         <Separator />
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Calendar className="mr-2 h-4 w-4" />
-                          <span>Created: {formatDate(offer.created_at)}</span>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center text-sm text-muted-foreground">
+                            <Calendar className="mr-2 h-4 w-4" />
+                            <span>Created: {new Date(offer.created_at).toLocaleDateString()}</span>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
-                    <CardFooter className="flex flex-col">
-                      {status ? (
-                        <div className="w-full space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">Status:</span>
-                            <div className="flex items-center">
-                              {status.status === 'PENDING' && (
-                                <>
-                                  <Clock className="h-4 w-4 text-yellow-500 mr-1" />
-                                  <span className="text-yellow-500">Processing</span>
-                                </>
-                              )}
-                              {status.status === 'SUCCESS' && (
-                                <>
-                                  <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
-                                  <span className="text-green-500">Activated</span>
-                                </>
-                              )}
-                              {status.status === 'FAILED' && (
-                                <>
-                                  <AlertCircle className="h-4 w-4 text-red-500 mr-1" />
-                                  <span className="text-red-500">Failed</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          {status.status === 'PENDING' && (
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Checking activation status...
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <Button
-                          className="w-full"
-                          onClick={() => activateOffer(offer.id)}
-                          disabled={isActivating || !offer.is_active}
-                        >
-                          {isActivating ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Activating...
-                            </>
-                          ) : (
-                            <>
-                              <CreditCard className="mr-2 h-4 w-4" />
-                              Activate Offer
-                            </>
-                          )}
-                        </Button>
-                      )}
+                    <CardFooter>
+                      <Button
+                        className="w-full"
+                        onClick={() => activateOffer(offer.id)}
+                        disabled={!offer.is_active || activating === offer.id || !user || user.balance < Number(offer.price)}
+                      >
+                        {activating === offer.id ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Activating...
+                          </>
+                        ) : (
+                          <>
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            Activate Offer
+                          </>
+                        )}
+                      </Button>
                     </CardFooter>
+                    
+                    {!offer.is_active && (
+                      <div className="px-6 pb-4">
+                        <Badge variant="outline" className="w-full justify-center">
+                          <AlertCircle className="mr-1 h-3 w-3" />
+                          This offer is currently inactive
+                        </Badge>
+                      </div>
+                    )}
                   </Card>
                 </motion.div>
-              );
-            })}
-          </motion.div>
+              ))}
+            </motion.div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center space-x-4 mt-8">
+                <Button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  variant="outline"
+                >
+                  Previous
+                </Button>
+                
+                <span className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+                
+                <Button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  variant="outline"
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </motion.div>
-    </motion.div>
+    </div>
   );
 };
 

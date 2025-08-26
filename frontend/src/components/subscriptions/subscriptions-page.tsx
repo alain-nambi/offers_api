@@ -1,28 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { subscriptionsApi } from '@/services/subscriptions';
-import type { UserOffer } from '@/services/subscriptions';
-import { Calendar, Clock, DollarSign } from 'lucide-react';
+import type { UserOffer, PaginatedResponse } from '@/services/subscriptions';
+import { Calendar, Clock, DollarSign, Loader2 } from 'lucide-react';
 import { Sidebar } from '../dashboard/sidebar';
 
 const SubscriptionsPage: React.FC = () => {
   const [subscriptions, setSubscriptions] = useState<UserOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     loadSubscriptions();
-  }, []);
+  }, [currentPage]);
 
   const loadSubscriptions = async () => {
     try {
       setLoading(true);
-      const data = await subscriptionsApi.getSubscriptions();
-      setSubscriptions(data);
+      const data: PaginatedResponse<UserOffer> = await subscriptionsApi.getSubscriptions(currentPage, 5);
+      setSubscriptions(data.results);
+      setTotalPages(Math.ceil(data.count / 5));
+      setTotalCount(data.count);
     } catch (err) {
       setError('Failed to load subscriptions');
       console.error('Error loading subscriptions:', err);
@@ -31,11 +37,18 @@ const SubscriptionsPage: React.FC = () => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const formatCurrency = (amount: number | string): string => {
+    const amountNum = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount);
+    }).format(amountNum);
   };
 
   const formatDate = (dateString: string) => {
@@ -59,7 +72,7 @@ const SubscriptionsPage: React.FC = () => {
     return `${diffDays} days`;
   };
 
-  if (loading) {
+  if (loading && currentPage === 1) {
     return (
       <div className="flex justify-center items-center h-64">
         <LoadingSpinner size="lg" message="Loading subscriptions..." />
@@ -110,93 +123,127 @@ const SubscriptionsPage: React.FC = () => {
             </p>
           </div>
           <Badge variant="secondary" className="text-sm">
-            {subscriptions.length} Active Subscription{subscriptions.length !== 1 ? 's' : ''}
+            {totalCount} Active Subscription{totalCount !== 1 ? 's' : ''}
           </Badge>
         </div>
 
-        {subscriptions.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-12"
-          >
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-4 mb-4">
-              <Clock className="h-12 w-12 text-gray-400" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">No active subscriptions</h3>
-            <p className="text-muted-foreground text-center max-w-md">
-              You don't have any active subscriptions at the moment.
-              Browse offers to activate a new subscription.
-            </p>
-          </motion.div>
+        {loading ? (
+          <div className="flex justify-center items-center flex-1">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
         ) : (
-          <motion.div
-            className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-22"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.3 }}
-          >
-            {subscriptions.map((subscription, index) => (
+          <>
+            {subscriptions.length === 0 ? (
               <motion.div
-                key={subscription.id}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.1 * index, duration: 0.3 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center py-12 mt-20"
               >
-                <Card className="h-full flex flex-col">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-xl">{subscription.offer_details.name}</CardTitle>
-                        <CardDescription>{subscription.offer_details.description}</CardDescription>
-                      </div>
-                      <Badge variant="default">
-                        Active
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Price</span>
-                        <span className="font-bold text-lg">{formatCurrency(subscription.offer_details.price)}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Duration</span>
-                        <span className="font-medium">{subscription.offer_details.duration_days} days</span>
-                      </div>
-
-                      <Separator />
-
-                      <div className="space-y-2">
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Calendar className="mr-2 h-4 w-4" />
-                          <span>Activated: {formatDate(subscription.activation_date)}</span>
-                        </div>
-
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Clock className="mr-2 h-4 w-4" />
-                          <span>Expires: {formatDate(subscription.expiration_date)}</span>
-                        </div>
-
-                        <div className="flex items-center text-sm">
-                          <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
-                          <span>
-                            {getTimeRemaining(subscription.expiration_date)} remaining
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-4 mb-4">
+                  <Clock className="h-12 w-12 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">No active subscriptions</h3>
+                <p className="text-muted-foreground text-center max-w-md">
+                  You don't have any active subscriptions at the moment.
+                  Browse offers to activate a new subscription.
+                </p>
               </motion.div>
-            ))}
-          </motion.div>
+            ) : (
+              <>
+                <motion.div
+                  className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-22"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.2, duration: 0.3 }}
+                >
+                  {subscriptions.map((subscription, index) => (
+                    <motion.div
+                      key={subscription.id}
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.1 * index, duration: 0.3 }}
+                    >
+                      <Card className="h-full flex flex-col">
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-xl">{subscription.offer_details.name}</CardTitle>
+                              <CardDescription>{subscription.offer_details.description}</CardDescription>
+                            </div>
+                            <Badge variant="default">
+                              Active
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="flex-1">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground">Price</span>
+                              <span className="font-bold text-lg">{formatCurrency(subscription.offer_details.price)}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground">Duration</span>
+                              <span className="font-medium">{subscription.offer_details.duration_days} days</span>
+                            </div>
+
+                            <Separator />
+
+                            <div className="space-y-2">
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <Calendar className="mr-2 h-4 w-4" />
+                                <span>Activated: {formatDate(subscription.activation_date)}</span>
+                              </div>
+
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                <Clock className="mr-2 h-4 w-4" />
+                                <span>Expires: {formatDate(subscription.expiration_date)}</span>
+                              </div>
+
+                              <div className="flex items-center text-sm">
+                                <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
+                                <span>
+                                  {getTimeRemaining(subscription.expiration_date)} remaining
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </motion.div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center space-x-4 mt-8">
+                    <Button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      variant="outline"
+                    >
+                      Previous
+                    </Button>
+                    
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    
+                    <Button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      variant="outline"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </>
         )}
       </motion.div>
     </div>
-
   );
 };
 

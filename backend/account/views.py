@@ -2,11 +2,18 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from .models import Account, Transaction
 from .serializers import AccountSerializer, TransactionSerializer
 from offers.models import UserOffer
 from offers.serializers import UserOfferSerializer
+
+
+class SubscriptionPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 
 @api_view(['GET'])
@@ -24,15 +31,17 @@ def get_balance(request):
 @permission_classes([IsAuthenticated])
 def get_subscriptions(request):
     """
-    Return the list of currently active offers for the user.
+    Return the list of currently active offers for the user with pagination.
     """
     user_offers = UserOffer.objects.filter(
         user=request.user,
         is_active=True
-    ).select_related('offer')
+    ).select_related('offer').order_by('id')
     
-    serializer = UserOfferSerializer(user_offers, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    paginator = SubscriptionPagination()
+    paginated_offers = paginator.paginate_queryset(user_offers, request)
+    serializer = UserOfferSerializer(paginated_offers, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 @api_view(['GET'])

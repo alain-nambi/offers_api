@@ -5,10 +5,18 @@ export interface Offer {
   id: number;
   name: string;
   description: string;
-  price: number;
+  price: number | string; // Can be number or string depending on how it's serialized
   duration_days: number;
   created_at: string;
   is_active: boolean;
+}
+
+// Pagination interface
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
 }
 
 // UserOffer interface
@@ -40,18 +48,37 @@ export interface ActivationStatus {
   updated_at: string;
 }
 
+// Helper function to ensure price is a number
+const getPriceAsNumber = (price: number | string): number => {
+  if (typeof price === 'number') {
+    return price;
+  }
+  return parseFloat(price) || 0;
+};
+
 // Offers API functions
 export const offersApi = {
-  // Get all offers
-  listOffers: async (): Promise<Offer[]> => {
-    const response = await api.get<Offer[]>('/offers/');
-    return response.data;
+  // Get all offers with pagination support
+  listOffers: async (page: number = 1, pageSize: number = 10): Promise<PaginatedResponse<Offer>> => {
+    const response = await api.get<PaginatedResponse<Offer>>(`/offers/?page=${page}&page_size=${pageSize}`);
+    // Ensure price is a number in the results
+    const results = response.data.results.map(offer => ({
+      ...offer,
+      price: getPriceAsNumber(offer.price)
+    }));
+    return {
+      ...response.data,
+      results
+    };
   },
 
   // Get a specific offer
   getOffer: async (offerId: number): Promise<Offer> => {
     const response = await api.get<Offer>(`/offers/${offerId}/`);
-    return response.data;
+    return {
+      ...response.data,
+      price: getPriceAsNumber(response.data.price)
+    };
   },
 
   // Activate an offer

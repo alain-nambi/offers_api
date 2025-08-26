@@ -10,15 +10,16 @@ import BalanceCard from "@/components/dashboard/balance-card";
 import { subscriptionsApi } from '@/services/subscriptions';
 
 export default function DashboardPage() {
-  const [subscriptionNumber, setSubscriptionNumber] = useState<number | 0>(0);
+  const [subscriptionNumber, setSubscriptionNumber] = useState<number | string>(0);
 
   useEffect(() => {
     const fetchSubscriptions = async () => {
       try {
-        const subscriptions = await subscriptionsApi.getSubscriptions();
+        const subscriptions = await subscriptionsApi.getAllSubscriptions();
         setSubscriptionNumber(subscriptions.length);
       } catch (error) {
         console.error('Error fetching subscriptions:', error);
+        setSubscriptionNumber('Error');
       }
     };
 
