@@ -5,33 +5,34 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from .models import Offer, UserOffer
 from .serializers import OfferSerializer, UserOfferSerializer
 from account.models import Account, Transaction
 from activation.tasks import process_activation
-from django.core.cache import cache
 import logging
 import uuid
 
 logger = logging.getLogger(__name__)
 
 
+class OfferPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def list_offers(request):
     """
-    List all available offers.
+    List all available offers with pagination.
     """
-    cache_key = 'offers_list'
-    offers_data = cache.get(cache_key)
-    
-    if not offers_data:
-        offers = Offer.objects.all()
-        serializer = OfferSerializer(offers, many=True)
-        offers_data = serializer.data
-        cache.set(cache_key, offers_data, 300)  # Cache for 5 minutes
-    
-    return Response(offers_data)
+    offers = Offer.objects.all().order_by('id')
+    paginator = OfferPagination()
+    paginated_offers = paginator.paginate_queryset(offers, request)
+    serializer = OfferSerializer(paginated_offers, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 
 @api_view(['GET'])
@@ -126,12 +127,10 @@ def expiring_offers(request):
     Get offers that are about to expire for the authenticated user.
     """
     threshold_date = timezone.now() + timezone.timedelta(days=3)
-    
     expiring_offers = UserOffer.objects.filter(
         user=request.user,
         is_active=True,
-        expiration_date__lte=threshold_date,
-        expiration_date__gte=timezone.now()
+        expiration_date__lte=threshold_date
     ).select_related('offer')
     
     serializer = UserOfferSerializer(expiring_offers, many=True)
@@ -142,7 +141,7 @@ def expiring_offers(request):
 @permission_classes([IsAuthenticated])
 def renew_offer(request):
     """
-    Renew an expiring offer for the authenticated user.
+    Renew an existing offer for the authenticated user.
     """
     user = request.user
     offer_id = request.data.get('offer_id')
