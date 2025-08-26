@@ -10,6 +10,7 @@ import LoginPage from '@/components/auth/login-page';
 import DashboardPage from "@/components/dashboard/dashboard";
 import OffersPage from "@/components/offers/offers-page";
 import SubscriptionsPage from "@/components/subscriptions/subscriptions-page";
+import TransactionsList from "@/components/transactions/transactions-list";
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { PageTransition } from '@/components/ui/page-transition';
 
@@ -61,6 +62,17 @@ const AnimatedRoutes: React.FC = () => {
             <ProtectedRoute>
               <PageTransition>
                 <SubscriptionsPage />
+              </PageTransition>
+            </ProtectedRoute>
+          } 
+        />
+        {/* Transactions route - protected and requires authentication */}
+        <Route 
+          path="/transactions" 
+          element={
+            <ProtectedRoute>
+              <PageTransition>
+                <TransactionsList />
               </PageTransition>
             </ProtectedRoute>
           } 

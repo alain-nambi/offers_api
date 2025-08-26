@@ -7,7 +7,8 @@ import {
   Settings, 
   LogOut,
   ShoppingBag,
-  HelpCircle
+  HelpCircle,
+  Receipt
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/services/auth-context';
@@ -36,6 +37,11 @@ export function Sidebar() {
       title: 'Subscriptions',
       href: '/subscriptions',
       icon: CreditCard,
+    },
+    {
+      title: 'Transactions',
+      href: '/transactions',
+      icon: Receipt,
     },
     {
       title: 'Tickets',

@@ -5,7 +5,7 @@ interface MetricCardProps {
   value: string;
   change: string;
   trend: "up" | "down";
-  icon: "revenue" | "deals" | "tickets" | "time" | "package";
+  icon: "revenue" | "deals" | "tickets" | "time" | "package" | "transactions";
 }
 
 const icons = {
@@ -14,6 +14,7 @@ const icons = {
   tickets: Ticket,
   time: Clock,
   package: Package,
+  transactions: TrendingUp,
 };
 
 export function MetricCard({ title, value, change, trend, icon }: MetricCardProps) {

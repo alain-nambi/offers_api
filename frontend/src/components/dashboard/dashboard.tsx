@@ -8,9 +8,11 @@ import { TicketChart } from "@/components/dashboard/ticket-chart";
 import { ProCard } from "@/components/dashboard/pro-card";
 import BalanceCard from "@/components/dashboard/balance-card";
 import { subscriptionsApi } from '@/services/subscriptions';
+import { transactionsApi } from '@/services/transactions';
 
 export default function DashboardPage() {
   const [subscriptionNumber, setSubscriptionNumber] = useState<number | string>(0);
+  const [transactionNumber, setTransactionNumber] = useState<number | string>(0);
 
   useEffect(() => {
     const fetchSubscriptions = async () => {
@@ -23,7 +25,18 @@ export default function DashboardPage() {
       }
     };
 
+    const fetchTransactions = async () => {
+      try {
+        const transactions = await transactionsApi.getTransactions(1, 100); // Get all transactions
+        setTransactionNumber(transactions.results.length);
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+        setTransactionNumber('Error');
+      }
+    };
+
     fetchSubscriptions();
+    fetchTransactions();
   }, []);
 
   return (
@@ -59,11 +72,11 @@ export default function DashboardPage() {
               trend="up"
             />
             <MetricCard 
-              title="Tickets" 
-              value="240" 
-              change="-2.5% from last month" 
-              icon="tickets" 
-              trend="down"
+              title="Transactions" 
+              value={transactionNumber.toString()}
+              change="Total transactions this month" 
+              icon="transactions"
+              trend="up"
             />
           </motion.div>
           
