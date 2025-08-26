@@ -1,11 +1,13 @@
 import api from './api';
 
 // Pagination interface
+// This interface defines the structure of paginated API responses
+// T is a generic type parameter that represents the type of items in the results array
 export interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
+  count: number;           // Total number of items available
+  next: string | null;     // URL to the next page of results, or null if there isn't one
+  previous: string | null; // URL to the previous page of results, or null if there isn't one
+  results: T[];            // Array of items of type T for the current page
 }
 
 export interface SubscriptionService {
