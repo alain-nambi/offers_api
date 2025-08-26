@@ -62,19 +62,19 @@ const OfferActivation: React.FC = () => {
     setActivating(offerId);
     try {
       const response = await offersApi.activateOffer(offerId);
-      
+
       // Update activation status
       setActivationStatus(prev => ({
         ...prev,
         [response.transaction_id]: 'PENDING'
       }));
-      
+
       toast.success('Activation started! Check status in transactions.');
-      
+
       // Refresh user data to update balance
       const userData = await authApi.profile();
       setUser(userData);
-      
+
       // Poll for activation status
       pollActivationStatus(response.transaction_id);
     } catch (error: any) {
@@ -94,10 +94,10 @@ const OfferActivation: React.FC = () => {
           ...prev,
           [transactionId]: status.status
         }));
-        
+
         if (status.status === 'SUCCESS' || status.status === 'FAILED') {
           clearInterval(interval);
-          
+
           if (status.status === 'SUCCESS') {
             toast.success('Offer activated successfully!');
           } else {
@@ -145,9 +145,16 @@ const OfferActivation: React.FC = () => {
               Browse and activate available offers
             </p>
           </div>
-          <Badge variant="secondary" className="text-sm">
-            {totalCount} Offer{totalCount !== 1 ? 's' : ''}
-          </Badge>
+          <div className='flex gap-2 items-center'>
+            Your current balance :
+            <Badge variant={"outline"} className='text-sm'>
+              {user?.account?.balance ? user.account.balance : 'N/A'} $
+            </Badge>
+            <Badge variant="outline" className="text-sm">
+              {totalCount} Offer{totalCount !== 1 ? 's' : ''}
+            </Badge>
+          </div>
+
         </div>
 
         {loading ? (
@@ -222,7 +229,7 @@ const OfferActivation: React.FC = () => {
                         )}
                       </Button>
                     </CardFooter>
-                    
+
                     {!offer.is_active && (
                       <div className="px-6 pb-4">
                         <Badge variant="outline" className="w-full justify-center">
@@ -246,11 +253,11 @@ const OfferActivation: React.FC = () => {
                 >
                   Previous
                 </Button>
-                
+
                 <span className="text-sm text-muted-foreground">
                   Page {currentPage} of {totalPages}
                 </span>
-                
+
                 <Button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
