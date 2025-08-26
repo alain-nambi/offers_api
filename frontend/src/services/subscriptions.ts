@@ -68,9 +68,9 @@ export const subscriptionsApi = {
   
   // Get all active subscriptions for the user without pagination (for backward compatibility)
   getAllSubscriptions: async (): Promise<UserOffer[]> => {
-    const response = await api.get<UserOffer[]>(`/account/subscriptions/`);
+    const response = await api.get<PaginatedResponse<UserOffer>>(`/account/subscriptions/`);
     // Ensure price is a number in the results
-    return response.data.map(subscription => ({
+    return response.data.results.map(subscription => ({
       ...subscription,
       offer_details: {
         ...subscription.offer_details,
