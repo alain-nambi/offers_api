@@ -10,6 +10,8 @@ from .models import Offer, UserOffer
 from .serializers import OfferSerializer, UserOfferSerializer
 from account.models import Account, Transaction
 from activation.tasks import process_activation
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 import logging
 import uuid
 
@@ -22,6 +24,44 @@ class OfferPagination(PageNumberPagination):
     max_page_size = 100
 
 
+@swagger_auto_schema(
+    method='get',
+    operation_description="Retrieve a paginated list of all available offers",
+    operation_summary="List Available Offers",
+    manual_parameters=[
+        openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('page_size', openapi.IN_QUERY, description="Number of results per page (max 100)", type=openapi.TYPE_INTEGER),
+    ],
+    responses={
+        200: openapi.Response(
+            description="List of offers retrieved successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'count': openapi.Schema(type=openapi.TYPE_INTEGER, description='Total number of offers'),
+                    'next': openapi.Schema(type=openapi.TYPE_STRING, description='URL to next page'),
+                    'previous': openapi.Schema(type=openapi.TYPE_STRING, description='URL to previous page'),
+                    'results': openapi.Schema(
+                        type=openapi.TYPE_ARRAY,
+                        items=openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Offer ID'),
+                                'name': openapi.Schema(type=openapi.TYPE_STRING, description='Offer name'),
+                                'description': openapi.Schema(type=openapi.TYPE_STRING, description='Offer description'),
+                                'price': openapi.Schema(type=openapi.TYPE_NUMBER, description='Offer price'),
+                                'duration_days': openapi.Schema(type=openapi.TYPE_INTEGER, description='Duration in days'),
+                                'is_active': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Whether offer is active'),
+                            }
+                        )
+                    )
+                }
+            )
+        ),
+        401: openapi.Response(description="Authentication required"),
+    },
+    tags=['Offers']
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def list_offers(request):
@@ -52,6 +92,34 @@ def offer_detail(request, offer_id):
         )
 
 
+@swagger_auto_schema(
+    method='post',
+    operation_description="Activate an offer for the authenticated user. This will deduct the offer price from the user's account balance and start the activation process asynchronously.",
+    operation_summary="Activate Offer",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['offer_id'],
+        properties={
+            'offer_id': openapi.Schema(type=openapi.TYPE_INTEGER, description='ID of the offer to activate'),
+        },
+    ),
+    responses={
+        202: openapi.Response(
+            description="Offer activation started successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'message': openapi.Schema(type=openapi.TYPE_STRING, description='Success message'),
+                    'transaction_id': openapi.Schema(type=openapi.TYPE_STRING, description='Transaction ID for tracking'),
+                }
+            )
+        ),
+        400: openapi.Response(description="Bad request - missing offer_id or insufficient balance"),
+        404: openapi.Response(description="Offer or account not found"),
+        401: openapi.Response(description="Authentication required"),
+    },
+    tags=['Offers']
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def activate_offer(request):

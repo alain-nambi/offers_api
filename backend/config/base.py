@@ -186,6 +186,39 @@ DEFAULT_FROM_EMAIL = 'noreply@offersapi.com'
 EXTERNAL_ACTIVATION_URL = os.environ.get('EXTERNAL_ACTIVATION_URL', 'http://localhost:8000/api/v1/partner/activate/')
 PARTNER_API_KEY = os.environ.get('PARTNER_API_KEY', 'partner-api-key')
 
+# Swagger/OpenAPI Configuration
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'JSON_EDITOR': True,
+    'SUPPORTED_SUBMIT_METHODS': [
+        'get',
+        'post',
+        'put',
+        'delete',
+        'patch'
+    ],
+    'OPERATIONS_SORTER': 'alpha',
+    'TAGS_SORTER': 'alpha',
+    'DOC_EXPANSION': 'none',
+    'DEEP_LINKING': True,
+    'SHOW_EXTENSIONS': True,
+    'DEFAULT_MODEL_RENDERING': 'model',
+}
+
+REDOC_SETTINGS = {
+    'LAZY_RENDERING': False,
+    'HIDE_HOSTNAME': False,
+    'EXPAND_RESPONSES': 'all',
+    'PATH_IN_MIDDLE': True,
+}
+
 # Logging configuration
 LOGGING = {
     'version': 1,
