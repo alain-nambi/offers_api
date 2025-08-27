@@ -17,7 +17,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Loader2, Download } from 'lucide-react';
+import { Loader2, Download, FileText, FileSpreadsheet, File, FileImage } from 'lucide-react';
 import { Sidebar } from '../dashboard/sidebar';
 import { reportsApi, type ExportFormat } from '@/services/reports';
 import toast from 'react-hot-toast';
@@ -151,33 +151,57 @@ const ReportsPage: React.FC = () => {
             </CardHeader>
             <CardContent className="grid gap-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="border rounded-lg p-4">
-                  <h3 className="font-medium">CSV</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="border-2 border-green-200 bg-green-50/50 rounded-lg p-4 transition-all duration-200 hover:border-green-300 hover:shadow-md"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileSpreadsheet className="h-5 w-5 text-green-600" />
+                    <h3 className="font-medium text-green-800">CSV</h3>
+                  </div>
+                  <p className="text-sm text-green-700/80">
                     Best for data analysis and importing into spreadsheet applications
                   </p>
-                </div>
+                </motion.div>
                 
-                <div className="border rounded-lg p-4">
-                  <h3 className="font-medium">PDF</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="border-2 border-red-200 bg-red-50/50 rounded-lg p-4 transition-all duration-200 hover:border-red-300 hover:shadow-md"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileImage className="h-5 w-5 text-red-600" />
+                    <h3 className="font-medium text-red-800">PDF</h3>
+                  </div>
+                  <p className="text-sm text-red-700/80">
                     Ideal for printing and sharing as a document
                   </p>
-                </div>
+                </motion.div>
                 
-                <div className="border rounded-lg p-4">
-                  <h3 className="font-medium">Excel (XLSX)</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="border-2 border-emerald-200 bg-emerald-50/50 rounded-lg p-4 transition-all duration-200 hover:border-emerald-300 hover:shadow-md"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
+                    <h3 className="font-medium text-emerald-800">Excel (XLSX)</h3>
+                  </div>
+                  <p className="text-sm text-emerald-700/80">
                     Best for complex data manipulation and calculations
                   </p>
-                </div>
+                </motion.div>
                 
-                <div className="border rounded-lg p-4">
-                  <h3 className="font-medium">Word</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="border-2 border-blue-200 bg-blue-50/50 rounded-lg p-4 transition-all duration-200 hover:border-blue-300 hover:shadow-md"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                    <h3 className="font-medium text-blue-800">Word</h3>
+                  </div>
+                  <p className="text-sm text-blue-700/80">
                     Suitable for reports and documentation
                   </p>
-                </div>
+                </motion.div>
               </div>
             </CardContent>
           </Card>
