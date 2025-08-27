@@ -1,54 +1,66 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
 import { Loader2, Download, FileText, FileSpreadsheet, File, FileImage } from 'lucide-react';
 import { Sidebar } from '../dashboard/sidebar';
 import { reportsApi, type ExportFormat } from '@/services/reports';
 import toast from 'react-hot-toast';
+import { format } from "date-fns";
+import { DateRangePicker, DateRange } from 'react-date-range';
+import 'react-date-range/dist/styles.css';
+import 'react-date-range/dist/theme/default.css';
 
 const ReportsPage: React.FC = () => {
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
-  const [format, setFormat] = useState<ExportFormat>('csv');
+  const [state, setState] = useState<any>([
+    {
+      startDate: new Date(),
+      endDate: new Date(),
+      key: 'selection'
+    }
+  ]);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('csv');
   const [loading, setLoading] = useState<boolean>(false);
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
 
   const handleExport = async () => {
-    if (!startDate || !endDate) {
+    if (!state[0].startDate || !state[0].endDate) {
       toast.error("Please select both start and end dates");
       return;
     }
 
-    if (new Date(startDate) > new Date(endDate)) {
+    if (state[0].startDate > state[0].endDate) {
       toast.error("Start date must be before end date");
       return;
     }
 
     try {
       setLoading(true);
-      
+
       // Export transactions
       await reportsApi.exportTransactions(
-        { startDate, endDate },
-        format
+        {
+          startDate: format(state[0].startDate, "yyyy-MM-dd"),
+          endDate: format(state[0].endDate, "yyyy-MM-dd")
+        },
+        exportFormat
       );
-      
-      toast.success(`Transactions exported as ${format.toUpperCase()} successfully`);
+
+      toast.success(`Transactions exported as ${exportFormat.toUpperCase()} successfully`);
     } catch (error) {
       console.error('Export error:', error);
       toast.error("Failed to export transactions");
@@ -60,7 +72,7 @@ const ReportsPage: React.FC = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
-      
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -87,29 +99,52 @@ const ReportsPage: React.FC = () => {
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="start-date">Start Date</Label>
-                  <Input
-                    id="start-date"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="end-date">End Date</Label>
-                  <Input
-                    id="end-date"
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
+                  <Label htmlFor="date-range">Date Range</Label>
+                  <div className="relative">
+                    <Button
+                      id="date-range"
+                      variant={"outline"}
+                      className="w-full justify-start text-left font-normal"
+                      onClick={() => setShowDatePicker(!showDatePicker)}
+                    >
+                      {state[0].startDate ? (
+                        state[0].endDate ? (
+                          <>
+                            {format(state[0].startDate, "LLL dd, y")} -{" "}
+                            {format(state[0].endDate, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(state[0].startDate, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Pick a date range</span>
+                      )}
+                    </Button>
+                    {showDatePicker && (
+                      <div className="absolute z-10 mt-2 p-4 bg-white border rounded-lg shadow-lg">
+                        <DateRangePicker
+                          onChange={item => setState([item.selection])}
+                          showSelectionPreview={true}
+                          moveRangeOnFirstSelection={false}
+                          months={2}
+                          ranges={state}
+                          direction="horizontal"
+                        />
+                        <Button
+                          className="mt-2 w-full"
+                          onClick={() => setShowDatePicker(false)}
+                        >
+                          Close
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="format">Export Format</Label>
-                <Select value={format} onValueChange={(value) => setFormat(value as ExportFormat)}>
+                <Select value={exportFormat} onValueChange={(value) => setExportFormat(value as ExportFormat)}>
                   <SelectTrigger id="format">
                     <SelectValue placeholder="Select format" />
                   </SelectTrigger>
@@ -121,9 +156,9 @@ const ReportsPage: React.FC = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
-              <Button 
-                onClick={handleExport} 
+
+              <Button
+                onClick={handleExport}
                 disabled={loading}
                 className="w-full md:w-auto"
               >
@@ -141,7 +176,7 @@ const ReportsPage: React.FC = () => {
               </Button>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Export Options</CardTitle>
@@ -151,7 +186,7 @@ const ReportsPage: React.FC = () => {
             </CardHeader>
             <CardContent className="grid gap-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <motion.div 
+                <motion.div
                   whileHover={{ scale: 1.02 }}
                   className="border-2 border-green-200 bg-green-50/50 rounded-lg p-4 transition-all duration-200 hover:border-green-300 hover:shadow-md"
                 >
@@ -163,8 +198,8 @@ const ReportsPage: React.FC = () => {
                     Best for data analysis and importing into spreadsheet applications
                   </p>
                 </motion.div>
-                
-                <motion.div 
+
+                <motion.div
                   whileHover={{ scale: 1.02 }}
                   className="border-2 border-red-200 bg-red-50/50 rounded-lg p-4 transition-all duration-200 hover:border-red-300 hover:shadow-md"
                 >
@@ -176,8 +211,8 @@ const ReportsPage: React.FC = () => {
                     Ideal for printing and sharing as a document
                   </p>
                 </motion.div>
-                
-                <motion.div 
+
+                <motion.div
                   whileHover={{ scale: 1.02 }}
                   className="border-2 border-emerald-200 bg-emerald-50/50 rounded-lg p-4 transition-all duration-200 hover:border-emerald-300 hover:shadow-md"
                 >
@@ -189,8 +224,8 @@ const ReportsPage: React.FC = () => {
                     Best for complex data manipulation and calculations
                   </p>
                 </motion.div>
-                
-                <motion.div 
+
+                <motion.div
                   whileHover={{ scale: 1.02 }}
                   className="border-2 border-blue-200 bg-blue-50/50 rounded-lg p-4 transition-all duration-200 hover:border-blue-300 hover:shadow-md"
                 >
