@@ -27,7 +27,7 @@ const convertToCSV = (transactions: Transaction[]): string => {
     'Updated At',
     'Completed At'
   ];
-  
+
   const rows = transactions.map(transaction => [
     transaction.id,
     transaction.transaction_id,
@@ -39,12 +39,12 @@ const convertToCSV = (transactions: Transaction[]): string => {
     transaction.updated_at,
     transaction.completed_at || ''
   ]);
-  
+
   const csvContent = [
     headers.join(','),
     ...rows.map(row => `"${row.join('","')}"`)
   ].join('\n');
-  
+
   return csvContent;
 };
 
@@ -74,11 +74,11 @@ const convertToExcel = (transactions: Transaction[]): ArrayBuffer => {
       transaction.completed_at || ''
     ])
   ];
-  
+
   const ws = XLSX.utils.aoa_to_sheet(worksheetData);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
-  
+
   const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
   return wbout;
 };
@@ -86,7 +86,7 @@ const convertToExcel = (transactions: Transaction[]): ArrayBuffer => {
 // Helper function to convert transactions to PDF
 const convertToPDF = (transactions: Transaction[], dateRange: DateRange): Blob => {
   const doc = new jsPDF();
-  
+
   // Set document properties
   doc.setProperties({
     title: 'Transactions Report',
@@ -95,31 +95,31 @@ const convertToPDF = (transactions: Transaction[], dateRange: DateRange): Blob =
     keywords: 'transactions, report, export',
     creator: 'Offer Manager System'
   });
-  
+
   // Add header
   doc.setFontSize(16);
   doc.setFont(undefined, 'bold');
   doc.text('Transactions Report', 14, 15);
-  
+
   // Add date range and generation info
   doc.setFontSize(10);
   doc.setFont(undefined, 'normal');
   doc.text(`Period: ${dateRange.startDate} to ${dateRange.endDate}`, 14, 22);
-  
+
   const generationDate = new Date().toLocaleDateString();
   const generationTime = new Date().toLocaleTimeString();
   doc.text(`Generated: ${generationDate} at ${generationTime}`, 14, 28);
-  
+
   // Add summary statistics
   const totalAmount = transactions
     .map(t => typeof t.amount === 'string' ? parseFloat(t.amount) : t.amount)
     .filter(amount => !isNaN(amount))
     .reduce((sum, amount) => sum + amount, 0);
-    
+
   const successfulTransactions = transactions.filter(t => t.status === 'SUCCESS').length;
   const pendingTransactions = transactions.filter(t => t.status === 'PENDING').length;
   const failedTransactions = transactions.filter(t => t.status === 'FAILED').length;
-  
+
   // Summary in a compact format
   doc.setFontSize(10);
   doc.text(
@@ -131,7 +131,7 @@ const convertToPDF = (transactions: Transaction[], dateRange: DateRange): Blob =
     14,
     35
   );
-  
+
   // Add transactions table
   autoTable(doc, {
     startY: 40,
@@ -183,16 +183,16 @@ const convertToPDF = (transactions: Transaction[], dateRange: DateRange): Blob =
       6: { cellWidth: 25 }   // Created
     }
   });
-  
+
   // Add page numbers
-  const pageCount = doc.getNumberOfPages();
+  const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
     doc.setTextColor(150);
-    doc.text(`Page ${i} of ${pageCount}`, 195, 285, null, null, 'right');
+    doc.text(`Page ${i} of ${pageCount}`, 195, 285, { align: 'right' });
   }
-  
+
   return doc.output('blob');
 };
 
@@ -201,21 +201,38 @@ export const reportsApi = {
   // Get transactions within a date range
   getTransactionsByDateRange: async (dateRange: DateRange): Promise<Transaction[]> => {
     try {
-      // In a real implementation, this would call an API endpoint that filters by date range
-      // For now, we'll fetch all transactions and filter client-side
-      const response = await api.get<Transaction[]>('/account/transactions/');
-      
+      // Fetch all transactions - we need to handle pagination to get all data
+      let allTransactions: Transaction[] = [];
+      let page = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await api.get(`/account/transactions/?page=${page}&page_size=100`);
+
+        // Handle both paginated response and array response for backward compatibility
+        if (Array.isArray(response.data)) {
+          // Legacy array response
+          allTransactions = [...allTransactions, ...response.data];
+          hasMore = false;
+        } else {
+          // Paginated response
+          allTransactions = [...allTransactions, ...response.data.results];
+          hasMore = response.data.next !== null;
+          page++;
+        }
+      }
+
       // Filter transactions by date range
-      const filteredTransactions = response.data.filter(transaction => {
+      const filteredTransactions = allTransactions.filter(transaction => {
         const transactionDate = new Date(transaction.created_at);
         const startDate = new Date(dateRange.startDate);
         const endDate = new Date(dateRange.endDate);
         // Set end date to end of day
         endDate.setHours(23, 59, 59, 999);
-        
+
         return transactionDate >= startDate && transactionDate <= endDate;
       });
-      
+
       return filteredTransactions;
     } catch (error) {
       console.error('Error fetching transactions by date range:', error);
@@ -228,7 +245,7 @@ export const reportsApi = {
     try {
       // Get transactions for the specified date range
       const transactions = await reportsApi.getTransactionsByDateRange(dateRange);
-      
+
       // Handle each format
       if (format === 'csv') {
         const csvContent = convertToCSV(transactions);
@@ -236,28 +253,28 @@ export const reportsApi = {
         saveAs(csvBlob, `transactions_${dateRange.startDate}_to_${dateRange.endDate}.csv`);
         return;
       }
-      
+
       if (format === 'xlsx') {
         const excelBuffer = convertToExcel(transactions);
         const excelBlob = new Blob([excelBuffer], { type: 'application/octet-stream' });
         saveAs(excelBlob, `transactions_${dateRange.startDate}_to_${dateRange.endDate}.xlsx`);
         return;
       }
-      
+
       if (format === 'pdf') {
         const pdfBlob = convertToPDF(transactions, dateRange);
         saveAs(pdfBlob, `transactions_${dateRange.startDate}_to_${dateRange.endDate}.pdf`);
         return;
       }
-      
+
       if (format === 'word') {
         // For Word, we'll create a simple text representation
         const wordContent = `
 Transactions Report
 Date Range: ${dateRange.startDate} to ${dateRange.endDate}
 
-${transactions.map(t => 
-  `ID: ${t.id}
+${transactions.map(t =>
+          `ID: ${t.id}
 Transaction ID: ${t.transaction_id}
 User: ${t.user}
 Offer: ${t.offer}
@@ -267,14 +284,14 @@ Created: ${t.created_at}
 Updated: ${t.updated_at}
 Completed: ${t.completed_at || 'N/A'}
 ----------------------`
-).join('\n')}
+        ).join('\n')}
         `.trim();
-        
+
         const wordBlob = new Blob([wordContent], { type: 'application/msword' });
         saveAs(wordBlob, `transactions_${dateRange.startDate}_to_${dateRange.endDate}.doc`);
         return;
       }
-      
+
       throw new Error(`Unsupported export format: ${format}`);
     } catch (error) {
       console.error(`Error exporting transactions as ${format}:`, error);
