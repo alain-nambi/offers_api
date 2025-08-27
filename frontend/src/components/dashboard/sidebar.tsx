@@ -103,7 +103,7 @@ export function Sidebar() {
         <div className="p-4 border-t">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start px-3 py-2 h-auto">
+              <Button variant="outline" className="w-full justify-start px-3 py-2 h-auto">
                 <div className="flex items-center space-x-3">
                   <Avatar className="w-8 h-8">
                     <AvatarImage src="https://csspicker.dev/api/image/?q=profile+avatar&image_type=photo" />
