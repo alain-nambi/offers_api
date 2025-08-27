@@ -165,16 +165,16 @@ const TransactionsList: React.FC = () => {
     }).format(amount);
   };
 
-  if (loading && currentPage === 1) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="flex flex-col items-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="mt-2 text-muted-foreground">Loading transactions...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (loading && currentPage === 1) {
+  //   return (
+  //     <div className="flex justify-center items-center h-64">
+  //       <div className="flex flex-col items-center">
+  //         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  //         <p className="mt-2 text-muted-foreground">Loading transactions...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -198,7 +198,12 @@ const TransactionsList: React.FC = () => {
           </Badge>
         </div>
 
-        <div className="mt-20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className='mt-22'
+        >
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -249,10 +254,6 @@ const TransactionsList: React.FC = () => {
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Retry
                   </Button>
-                </div>
-              ) : loading ? (
-                <div className="flex justify-center items-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : transactions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12">
@@ -368,7 +369,7 @@ const TransactionsList: React.FC = () => {
               )}
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   );
