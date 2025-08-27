@@ -140,7 +140,13 @@ const OfferActivation: React.FC = () => {
       >
         <div className="flex justify-between items-center mb-8 fixed top-0 left-64 right-0 bg-white p-4 shadow z-10">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Available Offers</h1>
+            <div className='flex flex-row gap-4 items-center'>
+              <h1 className="text-2xl font-bold tracking-tight">Available Offers</h1>
+              <Badge variant="outline" className="text-sm">
+                {totalCount} Offer{totalCount !== 1 ? 's' : ''}
+              </Badge>
+            </div>
+
             <p className="text-muted-foreground">
               Browse and activate available offers
             </p>
@@ -149,9 +155,6 @@ const OfferActivation: React.FC = () => {
             Your current balance :
             <Badge variant={"outline"} className='text-sm'>
               {user?.account?.balance ? user.account.balance : 'N/A'} $
-            </Badge>
-            <Badge variant="outline" className="text-sm">
-              {totalCount} Offer{totalCount !== 1 ? 's' : ''}
             </Badge>
           </div>
 

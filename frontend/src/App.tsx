@@ -105,7 +105,7 @@ export default function App() {
       {/* Wrap the app with AuthProvider to provide authentication context */}
       <AuthProvider>
         <Toaster />
-        <AuthDebugger />
+        {/* <AuthDebugger /> */}
         <div className="App">
           <Suspense fallback={<LoadingSpinner fullScreen message="Loading application..." />}>
             <AnimatedRoutes />
