@@ -12,9 +12,9 @@ import OffersPage from "@/components/offers/offers-page";
 import SubscriptionsPage from "@/components/subscriptions/subscriptions-page";
 import TransactionsList from "@/components/transactions/transactions-list";
 import ReportsPage from "@/components/reports/reports-page";
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+// import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { PageTransition } from '@/components/ui/page-transition';
-import AuthDebugger from './components/AuthDebugger';
+// import AuthDebugger from './components/AuthDebugger';
 
 import { Toaster } from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
@@ -107,9 +107,9 @@ export default function App() {
         <Toaster />
         {/* <AuthDebugger /> */}
         <div className="App">
-          <Suspense fallback={<LoadingSpinner fullScreen message="Loading application..." />}>
+          {/* <Suspense fallback={<LoadingSpinner fullScreen message="Loading application..." />}> */}
             <AnimatedRoutes />
-          </Suspense>
+          {/* </Suspense> */}
         </div>
       </AuthProvider>
     </Router>

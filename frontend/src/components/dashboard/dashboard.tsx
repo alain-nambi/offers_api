@@ -13,8 +13,6 @@ import { transactionsApi } from '@/services/transactions';
 export default function DashboardPage() {
   const [subscriptionNumber, setSubscriptionNumber] = useState<number | string>(0);
   const [transactionNumber, setTransactionNumber] = useState<number | string>(0);
-  const [isRevenueLoading, setIsRevenueLoading] = useState(true);
-  const [isTicketsLoading, setIsTicketsLoading] = useState(true);
 
   useEffect(() => {
     const fetchSubscriptions = async () => {
@@ -39,32 +37,6 @@ export default function DashboardPage() {
 
     fetchSubscriptions();
     fetchTransactions();
-    
-    // Simulate data fetching for charts
-    const loadRevenue = async () => {
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsRevenueLoading(false);
-      } catch (error) {
-        console.error('Error loading revenue chart:', error);
-        setIsRevenueLoading(false);
-      }
-    };
-
-    const loadTickets = async () => {
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsTicketsLoading(false);
-      } catch (error) {
-        console.error('Error loading tickets:', error);
-        setIsTicketsLoading(false);
-      }
-    };
-
-    loadRevenue();
-    loadTickets();
   }, []);
 
   return (
@@ -115,13 +87,7 @@ export default function DashboardPage() {
             transition={{ delay: 0.2, duration: 0.3 }}
           >
             <div className="lg:col-span-2">
-              {isRevenueLoading ? (
-                <div className="flex justify-center items-center h-64 bg-white rounded-lg shadow">
-                  <p className="text-gray-500">Loading revenue data...</p>
-                </div>
-              ) : (
-                <RevenueChart />
-              )}
+              <RevenueChart />
             </div>
             <ProCard />
           </motion.div>
@@ -131,13 +97,7 @@ export default function DashboardPage() {
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.3 }}
           >
-            {isTicketsLoading ? (
-              <div className="flex justify-center items-center h-64 bg-white rounded-lg shadow">
-                <p className="text-gray-500">Loading ticket data...</p>
-              </div>
-            ) : (
-              <TicketChart />
-            )}
+            <TicketChart />
           </motion.div>
         </main>
       </div>
