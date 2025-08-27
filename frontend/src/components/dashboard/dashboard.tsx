@@ -9,10 +9,17 @@ import { ProCard } from "@/components/dashboard/pro-card";
 import BalanceCard from "@/components/dashboard/balance-card";
 import { subscriptionsApi } from '@/services/subscriptions';
 import { transactionsApi } from '@/services/transactions';
+import { useAuth } from '@/services/auth-context';
+import { formatCurrency } from '@/utils/utils';
 
 export default function DashboardPage() {
   const [subscriptionNumber, setSubscriptionNumber] = useState<number | string>(0);
   const [transactionNumber, setTransactionNumber] = useState<number | string>(0);
+
+  const { user } = useAuth();
+
+  // Extract balance safely with fallback to 0
+  const balance = user?.account?.balance ?? 0;
 
   useEffect(() => {
     const fetchSubscriptions = async () => {
@@ -51,17 +58,16 @@ export default function DashboardPage() {
         <Header />
         <main className="flex-1 p-6">
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.3 }}
           >
-            <BalanceCard />
             <MetricCard 
-              title="Revenue" 
-              value="$24,800" 
-              change="+12.5% from last month" 
-              icon="revenue" 
+              title="Account Balance" 
+              value={user?.account ? formatCurrency(balance) : 'N/A'}
+              change="Your current account balance" 
+              icon="wallet" 
               trend="up"
             />
             <MetricCard 

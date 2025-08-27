@@ -1,11 +1,11 @@
-import { DollarSign, TrendingUp, Ticket, Clock, Package } from "lucide-react";
+import { DollarSign, TrendingUp, Ticket, Clock, Package, Wallet } from "lucide-react";
 
 interface MetricCardProps {
   title: string;
   value: string;
   change: string;
   trend: "up" | "down";
-  icon: "revenue" | "deals" | "tickets" | "time" | "package" | "transactions";
+  icon: keyof typeof icons; // restrict to keys of icons object
 }
 
 const icons = {
@@ -15,6 +15,7 @@ const icons = {
   time: Clock,
   package: Package,
   transactions: TrendingUp,
+  wallet: Wallet,
 };
 
 export function MetricCard({ title, value, change, trend, icon }: MetricCardProps) {
