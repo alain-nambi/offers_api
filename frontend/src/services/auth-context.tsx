@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { authApi } from './auth';
+import { authApi, tokenManager } from './auth';
+import { tokenRefreshManager } from '../utils/tokenRefresh';
 import api from './api';
 
 // Account interface
@@ -23,10 +24,11 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   isAuthenticated: boolean;
   isLoading: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 // Create the authentication context
@@ -42,66 +44,124 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Effect to check if user is already authenticated on initial load
   useEffect(() => {
     const initAuth = async () => {
-      // Check if there's a stored access token
-      const accessToken = localStorage.getItem('access_token');
-      if (accessToken) {
-        try {
-          // Try to get user profile with the stored token
-          const userData = await authApi.profile();
-          setUser(userData);
-        } catch (error) {
-          // If token is invalid, remove it
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
+      try {
+        if (tokenManager.isAuthenticated()) {
+          const { access } = tokenManager.getTokens();
+
+          // Check if token is expired
+          if (access && !tokenManager.isTokenExpired(access)) {
+            // Token is valid, get user profile
+            const userData = await authApi.profile();
+            setUser(userData);
+
+            // Start token refresh manager
+            tokenRefreshManager.start();
+          } else {
+            // Token is expired, try to refresh
+            await refreshTokens();
+          }
         }
+      } catch (error) {
+        console.error('Auth initialization failed:', error);
+        // Clear invalid tokens
+        tokenManager.clearTokens();
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      // Finish loading
-      setLoading(false);
     };
 
     initAuth();
+
+    // Cleanup on unmount
+    return () => {
+      tokenRefreshManager.stop();
+    };
   }, []);
 
-  // Function to log in a user
-  const login = async (username: string, password: string) => {
+  // Function to refresh tokens
+  const refreshTokens = async () => {
     try {
-      // Call the login API
-      const response = await authApi.login({ username, password });
-      
-      // Store tokens in localStorage
-      localStorage.setItem('access_token', response.access);
-      localStorage.setItem('refresh_token', response.refresh);
-      
-      // Get user profile and set user state
-      const userData = await authApi.profile();
-      setUser(userData);
+      const { refresh } = tokenManager.getTokens();
+      if (refresh) {
+        const response = await authApi.refresh({ refresh });
+        tokenManager.setTokens(response.access, response.refresh || refresh);
+
+        // Get updated user profile
+        const userData = await authApi.profile();
+        setUser(userData);
+
+        // Start token refresh manager
+        tokenRefreshManager.start();
+      }
     } catch (error) {
-      // Remove any existing tokens on failed login
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      console.error('Token refresh failed:', error);
+      tokenManager.clearTokens();
+      setUser(null);
       throw error;
     }
   };
 
-  // Function to log out a user
-  const logout = () => {
-    // Get refresh token
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (refreshToken) {
-      // Call logout API to blacklist the refresh token
-      authApi.logout(refreshToken).catch(() => {
-        // Ignore errors during logout
-      });
-    }
-    
-    // Remove tokens from localStorage
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    // Clear user state
-    setUser(null);
+  // Function to log in a user
+  const login = async (username: string, password: string) => {
+    try {
+      setLoading(true);
+      // Call the login API
+      const response = await authApi.login({ username, password });
 
-    // Update the axios instance to remove the Authorization header
-    delete api.defaults.headers.common['Authorization'];
+      // Store tokens using token manager
+      tokenManager.setTokens(response.access, response.refresh);
+
+      // Get user profile and set user state
+      const userData = await authApi.profile();
+      setUser(userData);
+
+      // Start token refresh manager
+      tokenRefreshManager.start();
+    } catch (error) {
+      // Remove any existing tokens on failed login
+      tokenManager.clearTokens();
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to log out a user
+  const logout = async () => {
+    try {
+      // Stop token refresh manager
+      tokenRefreshManager.stop();
+
+      // Get refresh token
+      const { refresh } = tokenManager.getTokens();
+      if (refresh) {
+        // Call logout API to blacklist the refresh token
+        await authApi.logout(refresh);
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Continue with logout even if API call fails
+    } finally {
+      // Always clear local state and tokens
+      tokenManager.clearTokens();
+      setUser(null);
+
+      // Update the axios instance to remove the Authorization header
+      delete api.defaults.headers.common['Authorization'];
+    }
+  };
+
+  // Function to refresh user data
+  const refreshUser = async () => {
+    try {
+      if (user && tokenManager.isAuthenticated()) {
+        const userData = await authApi.profile();
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+    }
   };
 
   // Check if user is authenticated
@@ -109,7 +169,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Provide the authentication context to child components
   return (
-    <AuthContext.Provider value={{ user, setUser, login, logout, isAuthenticated, isLoading: loading }}>
+    <AuthContext.Provider value={{
+      user,
+      setUser,
+      login,
+      logout,
+      isAuthenticated,
+      isLoading: loading,
+      refreshUser
+    }}>
       {children}
     </AuthContext.Provider>
   );

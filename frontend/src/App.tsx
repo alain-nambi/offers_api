@@ -14,6 +14,7 @@ import TransactionsList from "@/components/transactions/transactions-list";
 import ReportsPage from "@/components/reports/reports-page";
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { PageTransition } from '@/components/ui/page-transition';
+import AuthDebugger from './components/AuthDebugger';
 
 import { Toaster } from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
@@ -104,6 +105,7 @@ export default function App() {
       {/* Wrap the app with AuthProvider to provide authentication context */}
       <AuthProvider>
         <Toaster />
+        <AuthDebugger />
         <div className="App">
           <Suspense fallback={<LoadingSpinner fullScreen message="Loading application..." />}>
             <AnimatedRoutes />

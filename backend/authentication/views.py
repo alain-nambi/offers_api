@@ -4,6 +4,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.core.cache import cache
@@ -69,13 +71,13 @@ def login_view(request):
     refresh = RefreshToken.for_user(user)
     access_token = str(refresh.access_token)
     
-    # Cache the token in Redis with user info for 24 hours
+    # Cache the token in Redis with user info for 24 hours (matching token lifetime)
     user_data = {
         'id': user.id,
         'username': user.username,
         'email': user.email,
     }
-    cache.set(f"token_{access_token}", json.dumps(user_data), 86400)
+    cache.set(f"token_{access_token}", json.dumps(user_data), 86400)  # 24 hours
     
     return Response({
         'refresh': str(refresh),
@@ -192,4 +194,76 @@ def logout_view(request):
         return Response(
             {'error': 'Invalid token'}, 
             status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+@swagger_auto_schema(
+    method='post',
+    operation_description="Refresh access token using refresh token",
+    operation_summary="Refresh Token",
+    request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        required=['refresh'],
+        properties={
+            'refresh': openapi.Schema(type=openapi.TYPE_STRING, description='Refresh token'),
+        },
+    ),
+    responses={
+        200: openapi.Response(
+            description="Token refreshed successfully",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    'access': openapi.Schema(type=openapi.TYPE_STRING, description='New access token'),
+                    'refresh': openapi.Schema(type=openapi.TYPE_STRING, description='New refresh token (if rotation enabled)'),
+                }
+            )
+        ),
+        401: openapi.Response(description="Invalid refresh token"),
+    },
+    tags=['Authentication']
+)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def refresh_token_view(request):
+    """
+    Refresh the access token using a valid refresh token.
+    """
+    try:
+        refresh_token = request.data.get('refresh')
+        if not refresh_token:
+            return Response(
+                {'error': 'Refresh token is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        token = RefreshToken(refresh_token)
+        access_token = str(token.access_token)
+        
+        # Cache the new token in Redis
+        user_id = token.payload.get('user_id')
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+                user_data = {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                }
+                cache.set(f"token_{access_token}", json.dumps(user_data), 86400)  # 24 hours
+            except User.DoesNotExist:
+                pass
+        
+        response_data = {'access': access_token}
+        
+        # If token rotation is enabled, return new refresh token
+        if hasattr(token, 'token') and token.token:
+            response_data['refresh'] = str(token)
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        return Response(
+            {'error': 'Invalid refresh token'}, 
+            status=status.HTTP_401_UNAUTHORIZED
         )

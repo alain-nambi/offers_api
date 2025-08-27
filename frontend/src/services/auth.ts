@@ -22,6 +22,17 @@ interface UserProfile {
   date_joined: string;
 }
 
+// Interface for refresh token request
+interface RefreshRequest {
+  refresh: string;
+}
+
+// Interface for refresh token response
+interface RefreshResponse {
+  access: string;
+  refresh?: string;
+}
+
 // Authentication API functions
 export const authApi = {
   // Function to log in a user
@@ -36,8 +47,52 @@ export const authApi = {
     return response.data;
   },
 
+  // Function to refresh access token
+  refresh: async (data: RefreshRequest): Promise<RefreshResponse> => {
+    const response = await api.post<RefreshResponse>('/auth/refresh/', data);
+    return response.data;
+  },
+
   // Function to log out a user
   logout: async (refresh: string): Promise<void> => {
     await api.post('/auth/logout/', { refresh });
   }
+};
+
+// Token management utilities
+export const tokenManager = {
+  // Store tokens in localStorage
+  setTokens: (access: string, refresh: string) => {
+    localStorage.setItem('access_token', access);
+    localStorage.setItem('refresh_token', refresh);
+  },
+
+  // Get tokens from localStorage
+  getTokens: () => ({
+    access: localStorage.getItem('access_token'),
+    refresh: localStorage.getItem('refresh_token'),
+  }),
+
+  // Clear tokens from localStorage
+  clearTokens: () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+  },
+
+  // Check if user is authenticated
+  isAuthenticated: (): boolean => {
+    const { access, refresh } = tokenManager.getTokens();
+    return !!(access && refresh);
+  },
+
+  // Check if token is expired (basic check)
+  isTokenExpired: (token: string): boolean => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      return payload.exp < currentTime;
+    } catch {
+      return true;
+    }
+  },
 };
