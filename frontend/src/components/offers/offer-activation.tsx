@@ -4,13 +4,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/services/auth-context';
 import { offersApi } from '@/services/offers';
 import type { Offer, PaginatedResponse } from '@/services/offers';
 import { toast } from 'react-hot-toast';
+import { useUrlPagination } from '@/hooks/useUrlPagination';
 import {
-  CheckCircle,
-  Clock,
   AlertCircle,
   CreditCard,
   Calendar,
@@ -30,24 +30,28 @@ const OfferActivation: React.FC = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<number | null>(null);
-  const [activationStatus, setActivationStatus] = useState<Record<string, any>>({});
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const { user, setUser } = useAuth();
+  
+  // Use URL-based pagination
+  const { currentPage, pageSize, setCurrentPage, setPageSize } = useUrlPagination({
+    defaultPage: 1,
+    defaultPageSize: 6,
+  });
 
-  // Load offers on component mount and when page changes
+  // Load offers on component mount and when page/pageSize changes
   useEffect(() => {
     loadOffers();
-  }, [currentPage]);
+  }, [currentPage, pageSize]);
 
   // Load all available offers
   const loadOffers = async () => {
     try {
       setLoading(true);
-      const data: PaginatedResponse<Offer> = await offersApi.listOffers(currentPage, 5);
+      const data: PaginatedResponse<Offer> = await offersApi.listOffers(currentPage, pageSize);
       setOffers(data.results);
-      setTotalPages(Math.ceil(data.count / 5));
+      setTotalPages(Math.ceil(data.count / pageSize));
       setTotalCount(data.count);
     } catch (error) {
       toast.error('Failed to load offers');
@@ -117,6 +121,10 @@ const OfferActivation: React.FC = () => {
     }
   };
 
+  const handlePageSizeChange = (newPageSize: string) => {
+    setPageSize(parseInt(newPageSize, 10));
+  };
+
   if (loading && currentPage === 1) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -151,11 +159,25 @@ const OfferActivation: React.FC = () => {
               Browse and activate available offers
             </p>
           </div>
-          <div className='flex gap-2 items-center'>
-            Your current balance :
-            <Badge variant={"outline"} className='text-sm'>
-              {user?.account?.balance ? user.account.balance : 'N/A'} $
-            </Badge>
+          <div className='flex gap-4 items-center'>
+            <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Items per page" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="6">6 per page</SelectItem>
+                <SelectItem value="12">12 per page</SelectItem>
+                <SelectItem value="18">18 per page</SelectItem>
+                <SelectItem value="24">24 per page</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <div className='flex gap-2 items-center'>
+              Your current balance :
+              <Badge variant={"outline"} className='text-sm'>
+                {user?.account?.balance ? user.account.balance : 'N/A'} $
+              </Badge>
+            </div>
           </div>
 
         </div>
@@ -248,26 +270,55 @@ const OfferActivation: React.FC = () => {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex justify-center items-center space-x-4 mt-8">
-                <Button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  variant="outline"
-                >
-                  Previous
-                </Button>
+              <div className="flex justify-between items-center mt-8">
+                <div className="text-sm text-muted-foreground">
+                  Showing {Math.min(pageSize, totalCount - (currentPage - 1) * pageSize)} of {totalCount} offers
+                </div>
+                
+                <div className="flex items-center space-x-4">
+                  <Button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    variant="outline"
+                  >
+                    Previous
+                  </Button>
 
-                <span className="text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages}
-                </span>
+                  <div className="flex items-center space-x-2">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let page;
+                      if (totalPages <= 5) {
+                        page = i + 1;
+                      } else if (currentPage <= 3) {
+                        page = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        page = totalPages - 4 + i;
+                      } else {
+                        page = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          variant={page === currentPage ? "default" : "outline"}
+                          size="sm"
+                          className="w-8 h-8 p-0"
+                        >
+                          {page}
+                        </Button>
+                      );
+                    })}
+                  </div>
 
-                <Button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  variant="outline"
-                >
-                  Next
-                </Button>
+                  <Button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    variant="outline"
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             )}
           </>

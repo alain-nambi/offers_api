@@ -1,65 +1,77 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationEllipsis, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious
 } from '@/components/ui/pagination';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { Sidebar } from '../dashboard/sidebar';
 import { transactionsApi } from '@/services/transactions';
 import type { Transaction, PaginatedResponse } from '@/services/transactions';
+import { useUrlPagination } from '@/hooks/useUrlPagination';
 
 const TransactionsList: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [pageSize, setPageSize] = useState(10);
+
+  // Use URL-based pagination with status filter
+  const {
+    currentPage,
+    pageSize,
+    statusFilter,
+    setCurrentPage,
+    setPageSize,
+    setStatusFilter
+  } = useUrlPagination({
+    defaultPage: 1,
+    defaultPageSize: 10,
+    defaultStatus: 'ALL'
+  });
 
   // Load transactions
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchTransactions = async () => {
       if (isMounted) {
         await loadTransactions();
       }
     };
-    
+
     fetchTransactions();
-    
+
     return () => {
       isMounted = false;
     };
@@ -69,14 +81,14 @@ const TransactionsList: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // In a real implementation, this would call an API
       const data: PaginatedResponse<Transaction> = await transactionsApi.getTransactions(
-        currentPage, 
-        pageSize, 
+        currentPage,
+        pageSize,
         statusFilter
       );
-      
+
       if (data) {
         setTransactions(data.results);
         setTotalCount(data.count);
@@ -94,6 +106,14 @@ const TransactionsList: React.FC = () => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
+  };
+
+  const handlePageSizeChange = (newPageSize: string) => {
+    setPageSize(parseInt(newPageSize, 10));
+  };
+
+  const handleStatusFilterChange = (newStatus: string) => {
+    setStatusFilter(newStatus);
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -135,7 +155,7 @@ const TransactionsList: React.FC = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
-      
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -165,7 +185,7 @@ const TransactionsList: React.FC = () => {
                   </CardDescription>
                 </div>
                 <div className="flex space-x-2">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
                     <SelectTrigger className="w-[120px]">
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
@@ -177,9 +197,9 @@ const TransactionsList: React.FC = () => {
                       <SelectItem value="FAILED">Failed</SelectItem>
                     </SelectContent>
                   </Select>
-                  
-                  <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(Number(value))}>
-                    <SelectTrigger className="w-[100px]">
+
+                  <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+                    <SelectTrigger className="w-[120px]">
                       <SelectValue placeholder="Page size" />
                     </SelectTrigger>
                     <SelectContent>
@@ -189,14 +209,14 @@ const TransactionsList: React.FC = () => {
                       <SelectItem value="50">50 per page</SelectItem>
                     </SelectContent>
                   </Select>
-                  
+
                   <Button variant="outline" onClick={loadTransactions}>
                     <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            
+
             <CardContent>
               {error ? (
                 <div className="flex flex-col items-center justify-center py-12">
@@ -263,22 +283,22 @@ const TransactionsList: React.FC = () => {
                       </TableBody>
                     </Table>
                   </div>
-                  
+
                   {totalPages > 1 && (
                     <div className="flex items-center justify-between py-4">
                       <div className="text-sm text-muted-foreground">
                         Showing {Math.min(pageSize, totalCount - (currentPage - 1) * pageSize)} of {totalCount} transactions
                       </div>
-                      
+
                       <Pagination>
                         <PaginationContent>
                           <PaginationItem>
-                            <PaginationPrevious 
+                            <PaginationPrevious
                               onClick={() => handlePageChange(currentPage - 1)}
                               className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                             />
                           </PaginationItem>
-                          
+
                           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                             let page;
                             if (totalPages <= 5) {
@@ -290,7 +310,7 @@ const TransactionsList: React.FC = () => {
                             } else {
                               page = currentPage - 2 + i;
                             }
-                            
+
                             return (
                               <PaginationItem key={page}>
                                 <PaginationLink
@@ -303,15 +323,15 @@ const TransactionsList: React.FC = () => {
                               </PaginationItem>
                             );
                           })}
-                          
+
                           {totalPages > 5 && currentPage < totalPages - 2 && (
                             <PaginationItem>
                               <PaginationEllipsis />
                             </PaginationItem>
                           )}
-                          
+
                           <PaginationItem>
-                            <PaginationNext 
+                            <PaginationNext
                               onClick={() => handlePageChange(currentPage + 1)}
                               className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                             />

@@ -4,9 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { subscriptionsApi } from '@/services/subscriptions';
 import type { UserOffer, PaginatedResponse } from '@/services/subscriptions';
+import { useUrlPagination } from '@/hooks/useUrlPagination';
 import { Calendar, Clock, DollarSign, Loader2 } from 'lucide-react';
 import { Sidebar } from '../dashboard/sidebar';
 
@@ -14,20 +16,25 @@ const SubscriptionsPage: React.FC = () => {
   const [subscriptions, setSubscriptions] = useState<UserOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  
+  // Use URL-based pagination
+  const { currentPage, pageSize, setCurrentPage, setPageSize } = useUrlPagination({
+    defaultPage: 1,
+    defaultPageSize: 6,
+  });
 
   useEffect(() => {
     loadSubscriptions();
-  }, [currentPage]);
+  }, [currentPage, pageSize]);
 
   const loadSubscriptions = async () => {
     try {
       setLoading(true);
-      const data: PaginatedResponse<UserOffer> = await subscriptionsApi.getSubscriptions(currentPage, 5);
+      const data: PaginatedResponse<UserOffer> = await subscriptionsApi.getSubscriptions(currentPage, pageSize);
       setSubscriptions(data.results);
-      setTotalPages(Math.ceil(data.count / 5));
+      setTotalPages(Math.ceil(data.count / pageSize));
       setTotalCount(data.count);
     } catch (err) {
       setError('Failed to load subscriptions');
@@ -41,6 +48,10 @@ const SubscriptionsPage: React.FC = () => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
     }
+  };
+
+  const handlePageSizeChange = (newPageSize: string) => {
+    setPageSize(parseInt(newPageSize, 10));
   };
 
   const formatCurrency = (amount: number | string): string => {
@@ -122,9 +133,23 @@ const SubscriptionsPage: React.FC = () => {
               Manage your active subscriptions
             </p>
           </div>
-          <Badge variant="secondary" className="text-sm">
-            {totalCount} Active Subscription{totalCount !== 1 ? 's' : ''}
-          </Badge>
+          <div className="flex gap-4 items-center">
+            <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Items per page" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="6">6 per page</SelectItem>
+                <SelectItem value="12">12 per page</SelectItem>
+                <SelectItem value="18">18 per page</SelectItem>
+                <SelectItem value="24">24 per page</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Badge variant="secondary" className="text-sm">
+              {totalCount} Active Subscription{totalCount !== 1 ? 's' : ''}
+            </Badge>
+          </div>
         </div>
 
         {loading ? (
@@ -216,26 +241,55 @@ const SubscriptionsPage: React.FC = () => {
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center items-center space-x-4 mt-8">
-                    <Button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      variant="outline"
-                    >
-                      Previous
-                    </Button>
+                  <div className="flex justify-between items-center mt-8">
+                    <div className="text-sm text-muted-foreground">
+                      Showing {Math.min(pageSize, totalCount - (currentPage - 1) * pageSize)} of {totalCount} subscriptions
+                    </div>
                     
-                    <span className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    
-                    <Button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                      variant="outline"
-                    >
-                      Next
-                    </Button>
+                    <div className="flex items-center space-x-4">
+                      <Button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        variant="outline"
+                      >
+                        Previous
+                      </Button>
+
+                      <div className="flex items-center space-x-2">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let page;
+                          if (totalPages <= 5) {
+                            page = i + 1;
+                          } else if (currentPage <= 3) {
+                            page = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            page = totalPages - 4 + i;
+                          } else {
+                            page = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <Button
+                              key={page}
+                              onClick={() => handlePageChange(page)}
+                              variant={page === currentPage ? "default" : "outline"}
+                              size="sm"
+                              className="w-8 h-8 p-0"
+                            >
+                              {page}
+                            </Button>
+                          );
+                        })}
+                      </div>
+
+                      <Button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        variant="outline"
+                      >
+                        Next
+                      </Button>
+                    </div>
                   </div>
                 )}
               </>
