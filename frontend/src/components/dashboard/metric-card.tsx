@@ -18,11 +18,8 @@ const icons = {
   wallet: Wallet,
 };
 
-export function MetricCard({ title, value, change, trend, icon }: MetricCardProps) {
+export function MetricCard({ title, value, change, icon }: MetricCardProps) {
   const Icon = icons[icon];
-  const isPositive = trend === "up";
-
-  console.log(isPositive)
 
   return (
     <div className="flex flex-col justify-between bg-white p-6 rounded-lg border shadow-sm hover:shadow-md transition-shadow">
