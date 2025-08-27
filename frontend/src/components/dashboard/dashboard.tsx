@@ -6,7 +6,6 @@ import { MetricCard } from "@/components/dashboard/metric-card";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { TicketChart } from "@/components/dashboard/ticket-chart";
 import { ProCard } from "@/components/dashboard/pro-card";
-import BalanceCard from "@/components/dashboard/balance-card";
 import { subscriptionsApi } from '@/services/subscriptions';
 import { transactionsApi } from '@/services/transactions';
 import { useAuth } from '@/services/auth-context';

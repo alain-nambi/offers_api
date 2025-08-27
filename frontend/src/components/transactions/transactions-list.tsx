@@ -210,7 +210,7 @@ const TransactionsList: React.FC = () => {
                 </div>
                 <div className="flex space-x-2">
                   <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
-                    <SelectTrigger className="w-[120px]">
+                    <SelectTrigger>
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -223,7 +223,7 @@ const TransactionsList: React.FC = () => {
                   </Select>
 
                   <Select value={pageSize.toString()} onValueChange={handlePageSizeChange}>
-                    <SelectTrigger className="w-[120px]">
+                    <SelectTrigger>
                       <SelectValue placeholder="Page size" />
                     </SelectTrigger>
                     <SelectContent>
