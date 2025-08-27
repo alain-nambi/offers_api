@@ -42,21 +42,42 @@ const getAmountAsNumber = (amount: number | string): number => {
 // Transactions API functions
 export const transactionsApi = {
   // Get all transactions for the user with pagination support
-  getTransactions: async (page: number = 1, pageSize: number = 10): Promise<PaginatedResponse<Transaction>> => {
-    const response = await api.get<Transaction[]>(`/account/transactions/?page=${page}&page_size=${pageSize}`);
+  getTransactions: async (page: number = 1, pageSize: number = 10, status: string = 'ALL'): Promise<PaginatedResponse<Transaction>> => {
+    // Build query parameters
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString()
+    });
     
-    // Transform array response to paginated response format
-    // In a real implementation, the backend would return the paginated format
-    // But currently it returns a simple array, so we need to mock the pagination metadata
-    return {
-      count: response.data.length,
-      next: null,
-      previous: null,
-      results: response.data.map(transaction => ({
-        ...transaction,
-        amount: getAmountAsNumber(transaction.amount)
-      }))
-    };
+    // Add status filter if not 'ALL'
+    if (status && status !== 'ALL') {
+      params.append('status', status);
+    }
+    
+    const response = await api.get<PaginatedResponse<Transaction>>(`/account/transactions/?${params.toString()}`);
+    
+    // Handle both paginated response and array response for backward compatibility
+    if (Array.isArray(response.data)) {
+      // Legacy array response - transform to paginated format
+      return {
+        count: response.data.length,
+        next: null,
+        previous: null,
+        results: response.data.map(transaction => ({
+          ...transaction,
+          amount: getAmountAsNumber(transaction.amount)
+        }))
+      };
+    } else {
+      // Proper paginated response
+      return {
+        ...response.data,
+        results: response.data.results.map(transaction => ({
+          ...transaction,
+          amount: getAmountAsNumber(transaction.amount)
+        }))
+      };
+    }
   },
 
   // Get a specific transaction

@@ -25,4 +25,8 @@ class TransactionSerializer(serializers.ModelSerializer):
             'name': offer.name,
             'description': offer.description,
             'price': str(offer.price),
+            'duration_days': offer.duration_days,
+            'is_active': offer.is_active,
+            'created_at': offer.created_at.isoformat(),
+            'updated_at': offer.updated_at.isoformat(),
         }

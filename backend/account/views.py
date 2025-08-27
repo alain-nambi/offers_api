@@ -16,6 +16,12 @@ class SubscriptionPagination(PageNumberPagination):
     max_page_size = 100
 
 
+class TransactionPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_balance(request):
@@ -60,12 +66,16 @@ def transaction_status(request, transaction_id=None):
         serializer = TransactionSerializer(transaction)
         return Response(serializer.data, status=status.HTTP_200_OK)
     else:
-        # List all transactions for the user with optional filtering
+        # List all transactions for the user with pagination and filtering
         status_filter = request.GET.get('status')
-        transactions = Transaction.objects.filter(user=request.user)
+        transactions = Transaction.objects.filter(user=request.user).select_related('offer').order_by('-created_at')
         
-        if status_filter:
-            transactions = transactions.filter(status=status_filter)
-            
-        serializer = TransactionSerializer(transactions, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Apply status filter if provided and not 'ALL'
+        if status_filter and status_filter.upper() != 'ALL':
+            transactions = transactions.filter(status=status_filter.upper())
+        
+        # Apply pagination
+        paginator = TransactionPagination()
+        paginated_transactions = paginator.paginate_queryset(transactions, request)
+        serializer = TransactionSerializer(paginated_transactions, many=True)
+        return paginator.get_paginated_response(serializer.data)

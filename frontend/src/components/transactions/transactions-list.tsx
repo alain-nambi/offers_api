@@ -60,13 +60,37 @@ const TransactionsList: React.FC = () => {
     defaultStatus: 'ALL'
   });
 
-  // Load transactions
+  // Load transactions when pagination parameters change
   useEffect(() => {
     let isMounted = true;
 
     const fetchTransactions = async () => {
       if (isMounted) {
-        await loadTransactions();
+        try {
+          setLoading(true);
+          setError(null);
+
+          const data: PaginatedResponse<Transaction> = await transactionsApi.getTransactions(
+            currentPage,
+            pageSize,
+            statusFilter
+          );
+
+          if (data && isMounted) {
+            setTransactions(data.results);
+            setTotalCount(data.count);
+            setTotalPages(Math.ceil(data.count / pageSize));
+          }
+        } catch (err: any) {
+          if (isMounted) {
+            setError('Failed to load transactions. Please try again later.');
+            console.error('Error loading transactions:', err);
+          }
+        } finally {
+          if (isMounted) {
+            setLoading(false);
+          }
+        }
       }
     };
 
@@ -82,7 +106,6 @@ const TransactionsList: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // In a real implementation, this would call an API
       const data: PaginatedResponse<Transaction> = await transactionsApi.getTransactions(
         currentPage,
         pageSize,
@@ -109,7 +132,8 @@ const TransactionsList: React.FC = () => {
   };
 
   const handlePageSizeChange = (newPageSize: string) => {
-    setPageSize(parseInt(newPageSize, 10));
+    const size = parseInt(newPageSize, 10);
+    setPageSize(size);
   };
 
   const handleStatusFilterChange = (newStatus: string) => {

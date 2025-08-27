@@ -24,27 +24,28 @@ export const useUrlPagination = (options: UseUrlPaginationOptions = {}): UseUrlP
     defaultStatus = 'ALL'
   } = options;
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Get initial values from URL or use defaults
-  const getInitialPage = () => {
+  // Get values from URL or use defaults
+  const getPageFromUrl = useCallback(() => {
     const pageParam = searchParams.get('page');
     return pageParam ? Math.max(1, parseInt(pageParam, 10)) : defaultPage;
-  };
+  }, [searchParams, defaultPage]);
 
-  const getInitialPageSize = () => {
+  const getPageSizeFromUrl = useCallback(() => {
     const sizeParam = searchParams.get('pageSize');
     return sizeParam ? Math.max(1, parseInt(sizeParam, 10)) : defaultPageSize;
-  };
+  }, [searchParams, defaultPageSize]);
 
-  const getInitialStatus = () => {
+  const getStatusFromUrl = useCallback(() => {
     return searchParams.get('status') || defaultStatus;
-  };
+  }, [searchParams, defaultStatus]);
 
-  const [currentPage, setCurrentPageState] = useState(getInitialPage);
-  const [pageSize, setPageSizeState] = useState(getInitialPageSize);
-  const [statusFilter, setStatusFilterState] = useState(getInitialStatus);
+  // Initialize state from URL
+  const [currentPage, setCurrentPageState] = useState(() => getPageFromUrl());
+  const [pageSize, setPageSizeState] = useState(() => getPageSizeFromUrl());
+  const [statusFilter, setStatusFilterState] = useState(() => getStatusFromUrl());
 
   // Update URL when parameters change
   const updateUrl = useCallback((params: { page?: number; pageSize?: number; status?: string }) => {
@@ -82,22 +83,18 @@ export const useUrlPagination = (options: UseUrlPaginationOptions = {}): UseUrlP
     navigate(fullUrl, { replace: true });
   }, [searchParams, navigate, defaultPage, defaultPageSize, defaultStatus]);
 
-  // Sync state with URL parameters when they change
+  // Sync state with URL parameters when URL changes (e.g., browser back/forward)
   useEffect(() => {
-    const urlPage = getInitialPage();
-    const urlPageSize = getInitialPageSize();
-    const urlStatus = getInitialStatus();
+    const urlPage = getPageFromUrl();
+    const urlPageSize = getPageSizeFromUrl();
+    const urlStatus = getStatusFromUrl();
 
-    if (urlPage !== currentPage) {
-      setCurrentPageState(urlPage);
-    }
-    if (urlPageSize !== pageSize) {
-      setPageSizeState(urlPageSize);
-    }
-    if (urlStatus !== statusFilter) {
-      setStatusFilterState(urlStatus);
-    }
-  }, [searchParams]);
+    // Only update state if URL values are different from current state
+    // This prevents infinite loops
+    setCurrentPageState(prev => prev !== urlPage ? urlPage : prev);
+    setPageSizeState(prev => prev !== urlPageSize ? urlPageSize : prev);
+    setStatusFilterState(prev => prev !== urlStatus ? urlStatus : prev);
+  }, [getPageFromUrl, getPageSizeFromUrl, getStatusFromUrl]);
 
   const setCurrentPage = useCallback((page: number) => {
     setCurrentPageState(page);
