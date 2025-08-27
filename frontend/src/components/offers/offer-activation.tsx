@@ -30,6 +30,7 @@ const OfferActivation: React.FC = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<number | null>(null);
+  const [activationStatus, setActivationStatus] = useState<Record<string, string>>({});
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const { user, setUser } = useAuth();
