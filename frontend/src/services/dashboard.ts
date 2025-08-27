@@ -29,24 +29,24 @@ interface Transaction {
 const generateRevenueData = (transactions: Transaction[]): RevenueDataPoint[] => {
   // Group transactions by month
   const monthlyRevenue: Record<string, number> = {};
-  
+
   transactions.forEach(transaction => {
     if (transaction.status === 'SUCCESS') {
       const date = new Date(transaction.created_at);
       const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-      
+
       if (!monthlyRevenue[monthKey]) {
         monthlyRevenue[monthKey] = 0;
       }
-      
+
       monthlyRevenue[monthKey] += transaction.amount;
     }
   });
-  
+
   // Convert to array format for the chart
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const currentYear = new Date().getFullYear();
-  
+
   return months.map((month, index) => {
     const monthKey = `${currentYear}-${(index + 1).toString().padStart(2, '0')}`;
     return {
@@ -61,17 +61,17 @@ const generateTicketData = (transactions: Transaction[]): TicketDataPoint[] => {
   // Group transactions by month for created and solved tickets
   const monthlyCreated: Record<string, number> = {};
   const monthlySolved: Record<string, number> = {};
-  
+
   transactions.forEach(transaction => {
     const date = new Date(transaction.created_at);
     const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-    
+
     // Count as created
     if (!monthlyCreated[monthKey]) {
       monthlyCreated[monthKey] = 0;
     }
     monthlyCreated[monthKey] += 1;
-    
+
     // Count as solved if successful
     if (transaction.status === 'SUCCESS') {
       if (!monthlySolved[monthKey]) {
@@ -80,11 +80,11 @@ const generateTicketData = (transactions: Transaction[]): TicketDataPoint[] => {
       monthlySolved[monthKey] += 1;
     }
   });
-  
+
   // Convert to array format for the chart
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
   const currentYear = new Date().getFullYear();
-  
+
   return months.map((month, index) => {
     const monthKey = `${currentYear}-${(index + 1).toString().padStart(2, '0')}`;
     return {
@@ -101,8 +101,27 @@ export const dashboardApi = {
   getRevenueData: async (): Promise<RevenueDataPoint[]> => {
     try {
       // Fetch all transactions to generate revenue data
-      const response = await api.get<Transaction[]>('/account/transactions/');
-      return generateRevenueData(response.data);
+      let allTransactions: Transaction[] = [];
+      let page = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await api.get(`/account/transactions/?page=${page}&page_size=100`);
+
+        // Handle both paginated response and array response for backward compatibility
+        if (Array.isArray(response.data)) {
+          // Legacy array response
+          allTransactions = [...allTransactions, ...response.data];
+          hasMore = false;
+        } else {
+          // Paginated response
+          allTransactions = [...allTransactions, ...response.data.results];
+          hasMore = response.data.next !== null;
+          page++;
+        }
+      }
+
+      return generateRevenueData(allTransactions);
     } catch (error) {
       console.error('Error fetching revenue data:', error);
       // Return mock data as fallback
@@ -127,8 +146,27 @@ export const dashboardApi = {
   getTicketData: async (): Promise<TicketDataPoint[]> => {
     try {
       // Fetch all transactions to generate ticket data
-      const response = await api.get<Transaction[]>('/account/transactions/');
-      return generateTicketData(response.data);
+      let allTransactions: Transaction[] = [];
+      let page = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await api.get(`/account/transactions/?page=${page}&page_size=100`);
+
+        // Handle both paginated response and array response for backward compatibility
+        if (Array.isArray(response.data)) {
+          // Legacy array response
+          allTransactions = [...allTransactions, ...response.data];
+          hasMore = false;
+        } else {
+          // Paginated response
+          allTransactions = [...allTransactions, ...response.data.results];
+          hasMore = response.data.next !== null;
+          page++;
+        }
+      }
+
+      return generateTicketData(allTransactions);
     } catch (error) {
       console.error('Error fetching ticket data:', error);
       // Return mock data as fallback
