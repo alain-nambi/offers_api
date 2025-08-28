@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/services/auth-context';
 import { offersApi } from '@/services/offers';
 import type { Offer, PaginatedResponse } from '@/services/offers';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { useUrlPagination } from '@/hooks/useUrlPagination';
 import {
   AlertCircle,
@@ -176,7 +176,7 @@ const OfferActivation: React.FC = () => {
             <div className='flex gap-2 items-center'>
               Your current balance :
               <Badge variant={"outline"} className='text-sm'>
-                {user?.account?.balance ? user.account.balance : 'N/A'} $
+                {user?.account?.balance !== undefined ? user.account.balance : 'N/A'} $
               </Badge>
             </div>
           </div>
@@ -240,7 +240,7 @@ const OfferActivation: React.FC = () => {
                       <Button
                         className="w-full"
                         onClick={() => activateOffer(offer.id)}
-                        disabled={!offer.is_active || activating === offer.id || !user || user.balance < Number(offer.price)}
+                        disabled={!offer.is_active || activating === offer.id || !user || (user.account?.balance ?? 0) < Number(offer.price)}
                       >
                         {activating === offer.id ? (
                           <>
