@@ -201,16 +201,16 @@ const SubscriptionsPage: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="flex flex-col items-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="mt-2 text-muted-foreground">Loading subscriptions...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="flex justify-center items-center h-64">
+  //       <div className="flex flex-col items-center">
+  //         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  //         <p className="mt-2 text-muted-foreground">Loading subscriptions...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   if (error) {
     return (

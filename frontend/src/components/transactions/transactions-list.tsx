@@ -228,16 +228,16 @@ const TransactionsList: React.FC = () => {
     }).format(amount);
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="flex flex-col items-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="mt-2 text-muted-foreground">Loading transactions...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="flex justify-center items-center h-64">
+  //       <div className="flex flex-col items-center">
+  //         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  //         <p className="mt-2 text-muted-foreground">Loading transactions...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -353,7 +353,12 @@ const TransactionsList: React.FC = () => {
           ) : (
             <>
               {/* Transactions Table */}
-              <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+              <motion.div 
+                className="bg-white rounded-lg border shadow-sm overflow-hidden"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.4 }}
+              >
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-b bg-muted/30">
@@ -534,7 +539,7 @@ const TransactionsList: React.FC = () => {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+              </motion.div>
 
               {/* Pagination - Always show if there are transactions */}
               {filteredAndSortedTransactions.length > 0 && (
