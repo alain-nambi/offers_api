@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/services/auth-context';
 import { offersApi } from '@/services/offers';
 import type { Offer, PaginatedResponse } from '@/services/offers';
-import toast from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import { useUrlPagination } from '@/hooks/useUrlPagination';
 import {
   AlertCircle,
@@ -111,6 +111,7 @@ const OfferActivation: React.FC = () => {
         }
       } catch (error) {
         console.error('Error polling activation status:', error);
+        toast.error('Error checking activation status');
         clearInterval(interval);
       }
     }, 3000);
@@ -240,7 +241,7 @@ const OfferActivation: React.FC = () => {
                       <Button
                         className="w-full"
                         onClick={() => activateOffer(offer.id)}
-                        disabled={!offer.is_active || activating === offer.id || !user || (user.account?.balance ?? 0) < Number(offer.price)}
+                        disabled={!offer.is_active || activating === offer.id || !user || (user.account?.balance !== undefined && user.account.balance < Number(offer.price))}
                       >
                         {activating === offer.id ? (
                           <>
@@ -325,6 +326,8 @@ const OfferActivation: React.FC = () => {
           </>
         )}
       </motion.div>
+
+      <Toaster />
     </div>
   );
 };

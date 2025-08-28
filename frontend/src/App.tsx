@@ -16,7 +16,6 @@ import ReportsPage from "@/components/reports/reports-page";
 import { PageTransition } from '@/components/ui/page-transition';
 // import AuthDebugger from './components/AuthDebugger';
 
-import { Toaster } from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
 
 // Animated route wrapper
@@ -104,7 +103,6 @@ export default function App() {
     <Router>
       {/* Wrap the app with AuthProvider to provide authentication context */}
       <AuthProvider>
-        <Toaster />
         {/* <AuthDebugger /> */}
         <div className="App">
           {/* <Suspense fallback={<LoadingSpinner fullScreen message="Loading application..." />}> */}
