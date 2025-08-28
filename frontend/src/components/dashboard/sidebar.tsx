@@ -59,11 +59,6 @@ export function Sidebar() {
       href: '/reports',
       icon: FileText,
     },
-    {
-      title: 'Tickets',
-      href: '/tickets',
-      icon: Ticket,
-    },
   ];
 
   return (
