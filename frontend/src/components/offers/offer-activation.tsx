@@ -39,29 +39,32 @@ const OfferActivation: React.FC = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<number | null>(null);
-  const [totalPages, setTotalPages] = useState(1);
+
   const [totalCount, setTotalCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const { user, setUser } = useAuth();
 
-  // Use URL-based pagination
-  const { currentPage, pageSize, setCurrentPage, setPageSize } = useUrlPagination({
+  // Use URL-based pagination with status filter
+  const { currentPage, pageSize, statusFilter, setCurrentPage, setPageSize, setStatusFilter } = useUrlPagination({
     defaultPage: 1,
     defaultPageSize: 12,
+    defaultStatus: 'all'
   });
+
+  // Convert URL status filter to our format
+  const normalizedStatusFilter = statusFilter.toLowerCase() as 'all' | 'active' | 'inactive';
 
   // Filter and sort offers
   const filteredAndSortedOffers = useMemo(() => {
     let filtered = offers.filter(offer => {
       const matchesSearch = offer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         offer.description.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === 'all' ||
-        (statusFilter === 'active' && offer.is_active) ||
-        (statusFilter === 'inactive' && !offer.is_active);
+      const matchesStatus = normalizedStatusFilter === 'all' ||
+        (normalizedStatusFilter === 'active' && offer.is_active) ||
+        (normalizedStatusFilter === 'inactive' && !offer.is_active);
       return matchesSearch && matchesStatus;
     });
 
@@ -96,7 +99,7 @@ const OfferActivation: React.FC = () => {
     });
 
     return filtered;
-  }, [offers, searchQuery, sortBy, sortDirection, statusFilter]);
+  }, [offers, searchQuery, sortBy, sortDirection, normalizedStatusFilter]);
 
   // Load offers on component mount and when page/pageSize changes
   useEffect(() => {
@@ -108,7 +111,7 @@ const OfferActivation: React.FC = () => {
     if (currentPage !== 1) {
       setCurrentPage(1);
     }
-  }, [searchQuery, statusFilter, sortBy, sortDirection]);
+  }, [searchQuery, sortBy, sortDirection]);
 
   // Load all available offers
   const loadOffers = async () => {
@@ -117,7 +120,6 @@ const OfferActivation: React.FC = () => {
       // Load more items to enable client-side filtering and sorting
       const data: PaginatedResponse<Offer> = await offersApi.listOffers(1, 100);
       setOffers(data.results);
-      setTotalPages(Math.ceil(data.count / pageSize));
       setTotalCount(data.count);
     } catch (error) {
       toast.error('Failed to load offers');
@@ -250,7 +252,7 @@ const OfferActivation: React.FC = () => {
               />
             </div>
 
-            <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+            <Select value={normalizedStatusFilter} onValueChange={(value: string) => setStatusFilter(value)}>
               <SelectTrigger>
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue />
@@ -259,6 +261,18 @@ const OfferActivation: React.FC = () => {
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active Only</SelectItem>
                 <SelectItem value="inactive">Inactive Only</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(parseInt(value, 10))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Items per page" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="6">6 per page</SelectItem>
+                <SelectItem value="12">12 per page</SelectItem>
+                <SelectItem value="18">18 per page</SelectItem>
+                <SelectItem value="24">24 per page</SelectItem>
               </SelectContent>
             </Select>
 
@@ -432,59 +446,64 @@ const OfferActivation: React.FC = () => {
               ))}
             </motion.div>
 
-            {/* Pagination */}
-            {totalFilteredPages > 1 && (
+            {/* Pagination - Always show if there are offers */}
+            {filteredAndSortedOffers.length > 0 && (
               <div className="flex justify-between items-center mt-8 bg-white rounded-lg border p-4">
                 <div className="text-sm text-muted-foreground">
                   Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredAndSortedOffers.length)} of {filteredAndSortedOffers.length} offers
+                  {filteredAndSortedOffers.length !== totalCount && (
+                    <span className="ml-1">(filtered from {totalCount} total)</span>
+                  )}
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <Button
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Previous
-                  </Button>
+                {totalFilteredPages > 1 && (
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Previous
+                    </Button>
 
-                  <div className="flex items-center space-x-1">
-                    {Array.from({ length: Math.min(5, totalFilteredPages) }, (_, i) => {
-                      let page;
-                      if (totalFilteredPages <= 5) {
-                        page = i + 1;
-                      } else if (currentPage <= 3) {
-                        page = i + 1;
-                      } else if (currentPage >= totalFilteredPages - 2) {
-                        page = totalFilteredPages - 4 + i;
-                      } else {
-                        page = currentPage - 2 + i;
-                      }
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, totalFilteredPages) }, (_, i) => {
+                        let page;
+                        if (totalFilteredPages <= 5) {
+                          page = i + 1;
+                        } else if (currentPage <= 3) {
+                          page = i + 1;
+                        } else if (currentPage >= totalFilteredPages - 2) {
+                          page = totalFilteredPages - 4 + i;
+                        } else {
+                          page = currentPage - 2 + i;
+                        }
 
-                      return (
-                        <Button
-                          key={page}
-                          onClick={() => handlePageChange(page)}
-                          variant={page === currentPage ? "default" : "outline"}
-                          size="sm"
-                          className="w-8 h-8 p-0"
-                        >
-                          {page}
-                        </Button>
-                      );
-                    })}
+                        return (
+                          <Button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            variant={page === currentPage ? "default" : "outline"}
+                            size="sm"
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalFilteredPages}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Next
+                    </Button>
                   </div>
-
-                  <Button
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalFilteredPages}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Next
-                  </Button>
-                </div>
+                )}
               </div>
             )}
           </>
