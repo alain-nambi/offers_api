@@ -200,7 +200,7 @@ const OfferActivation: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center h-screen w-full">
         <div className="flex flex-col items-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="mt-2 text-muted-foreground">Loading offers...</p>
