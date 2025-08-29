@@ -247,21 +247,16 @@ const TransactionsList: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="flex-1 flex flex-col p-6 ml-64"
+        className="flex-1 flex flex-col"
       >
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <div className='flex items-center gap-3 mb-2'>
-                <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
-                <Badge variant="outline" className="text-sm">
-                  {filteredAndSortedTransactions.length} of {totalCount}
-                </Badge>
-              </div>
-              <p className="text-muted-foreground">
-                View and track your transaction history
-              </p>
+        {/* Header - Improved design with less vertical space */}
+        <div className="bg-white border-b px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight">Transactions</h1>
+              <Badge variant="outline" className="text-xs">
+                {filteredAndSortedTransactions.length} of {totalCount}
+              </Badge>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={loadTransactions} disabled={loading}>
@@ -272,22 +267,24 @@ const TransactionsList: React.FC = () => {
               </Button>
             </div>
           </div>
+        </div>
 
-          {/* Search and Filters */}
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="relative flex-1 min-w-[300px]">
+        {/* Search and Filters - Compacted */}
+        <div className="bg-white border-b px-6 py-3">
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="relative flex-1 min-w-[200px] max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search transactions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 py-1 text-sm"
               />
             </div>
 
             <Select value={statusFilter} onValueChange={(value: string) => setStatusFilter(value)}>
-              <SelectTrigger className="w-[160px]">
-                <Filter className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-[140px] py-1 text-sm">
+                <Filter className="h-4 w-4 mr-1" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -300,23 +297,21 @@ const TransactionsList: React.FC = () => {
             </Select>
 
             <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(parseInt(value, 10))}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Items per page" />
+              <SelectTrigger className="w-[100px] py-1 text-sm">
+                <SelectValue placeholder="Items" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="5">5 per page</SelectItem>
-                <SelectItem value="10">10 per page</SelectItem>
-                <SelectItem value="15">15 per page</SelectItem>
-                <SelectItem value="25">25 per page</SelectItem>
+                <SelectItem value="5">5 items</SelectItem>
+                <SelectItem value="10">10 items</SelectItem>
+                <SelectItem value="15">15 items</SelectItem>
+                <SelectItem value="25">25 items</SelectItem>
               </SelectContent>
             </Select>
           </div>
-
-
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 overflow-auto p-6">
           {error ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
@@ -352,255 +347,176 @@ const TransactionsList: React.FC = () => {
             </div>
           ) : (
             <>
-              {/* Transactions Table */}
-              <motion.div 
-                className="bg-white rounded-lg border shadow-sm overflow-hidden"
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.4 }}
-              >
+              <div className="rounded-lg border bg-white">
                 <Table>
                   <TableHeader>
-                    <TableRow className="hover:bg-transparent border-b bg-muted/30">
-                      <TableHead className="font-semibold text-foreground w-20">
+                    <TableRow>
+                      <TableHead className="w-[100px]">
                         <Button
                           variant="ghost"
-                          size="sm"
                           onClick={() => toggleSort('id')}
-                          className="h-auto p-0 font-semibold hover:bg-transparent text-left justify-start"
+                          className="px-0 font-bold"
                         >
                           ID
-                          {sortBy === 'id' && (
-                            sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />
-                          )}
+                          {sortBy === 'id' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-4 w-4" /> : <SortDesc className="ml-1 h-4 w-4" />)}
                         </Button>
                       </TableHead>
-                      <TableHead className="font-semibold text-foreground w-64">
+                      <TableHead>
                         <Button
                           variant="ghost"
-                          size="sm"
                           onClick={() => toggleSort('transaction_id')}
-                          className="h-auto p-0 font-semibold hover:bg-transparent text-left justify-start"
+                          className="px-0 font-bold"
                         >
                           Transaction ID
-                          {sortBy === 'transaction_id' && (
-                            sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />
-                          )}
+                          {sortBy === 'transaction_id' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-4 w-4" /> : <SortDesc className="ml-1 h-4 w-4" />)}
                         </Button>
                       </TableHead>
-                      <TableHead className="font-semibold text-foreground">
+                      <TableHead>
                         <Button
                           variant="ghost"
-                          size="sm"
                           onClick={() => toggleSort('offer_name')}
-                          className="h-auto p-0 font-semibold hover:bg-transparent text-left justify-start"
+                          className="px-0 font-bold"
                         >
-                          Offer Details
-                          {sortBy === 'offer_name' && (
-                            sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />
-                          )}
+                          Offer
+                          {sortBy === 'offer_name' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-4 w-4" /> : <SortDesc className="ml-1 h-4 w-4" />)}
                         </Button>
                       </TableHead>
-                      <TableHead className="font-semibold text-foreground text-right w-32">
+                      <TableHead className="text-right">
                         <Button
                           variant="ghost"
-                          size="sm"
                           onClick={() => toggleSort('amount')}
-                          className="h-auto p-0 font-semibold hover:bg-transparent text-right justify-end w-full"
+                          className="px-0 font-bold"
                         >
                           Amount
-                          {sortBy === 'amount' && (
-                            sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />
-                          )}
+                          {sortBy === 'amount' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-4 w-4" /> : <SortDesc className="ml-1 h-4 w-4" />)}
                         </Button>
                       </TableHead>
-                      <TableHead className="font-semibold text-foreground w-28">
+                      <TableHead>
                         <Button
                           variant="ghost"
-                          size="sm"
                           onClick={() => toggleSort('status')}
-                          className="h-auto p-0 font-semibold hover:bg-transparent text-left justify-start"
+                          className="px-0 font-bold"
                         >
                           Status
-                          {sortBy === 'status' && (
-                            sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />
-                          )}
+                          {sortBy === 'status' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-4 w-4" /> : <SortDesc className="ml-1 h-4 w-4" />)}
                         </Button>
                       </TableHead>
-                      <TableHead className="font-semibold text-foreground w-36">
+                      <TableHead>
                         <Button
                           variant="ghost"
-                          size="sm"
                           onClick={() => toggleSort('created_at')}
-                          className="h-auto p-0 font-semibold hover:bg-transparent text-left justify-start"
+                          className="px-0 font-bold"
                         >
                           Created
-                          {sortBy === 'created_at' && (
-                            sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />
-                          )}
+                          {sortBy === 'created_at' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-4 w-4" /> : <SortDesc className="ml-1 h-4 w-4" />)}
                         </Button>
                       </TableHead>
-                      <TableHead className="font-semibold text-foreground w-36">
+                      <TableHead>
                         <Button
                           variant="ghost"
-                          size="sm"
                           onClick={() => toggleSort('completed_at')}
-                          className="h-auto p-0 font-semibold hover:bg-transparent text-left justify-start"
+                          className="px-0 font-bold"
                         >
                           Completed
-                          {sortBy === 'completed_at' && (
-                            sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />
-                          )}
+                          {sortBy === 'completed_at' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-4 w-4" /> : <SortDesc className="ml-1 h-4 w-4" />)}
                         </Button>
                       </TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {paginatedTransactions.map((transaction, index) => (
-                      <TableRow
-                        key={transaction.id}
-                        className={`hover:bg-muted/50 transition-colors border-b ${index % 2 === 0 ? 'bg-white' : 'bg-muted/20'
-                          }`}
-                      >
-                        <TableCell className="font-medium py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"></div>
-                            <span className="font-mono text-sm font-semibold">#{transaction.id}</span>
+                    {paginatedTransactions.map((transaction) => (
+                      <TableRow key={transaction.id}>
+                        <TableCell className="font-medium">{transaction.id}</TableCell>
+                        <TableCell className="font-mono text-sm">{transaction.transaction_id}</TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{transaction.offer_details?.name || 'N/A'}</div>
+                            <div className="text-sm text-muted-foreground">{transaction.offer_details?.description || ''}</div>
                           </div>
                         </TableCell>
-                        <TableCell className="py-4">
-                          <div className="font-mono text-xs bg-muted px-3 py-2 rounded-lg inline-block border max-w-full">
-                            <span className="block truncate" title={transaction.transaction_id}>
-                              {transaction.transaction_id}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <div className="space-y-1 max-w-xs">
-                            <div className="font-semibold text-sm text-foreground">
-                              {transaction.offer_details?.name || `Offer #${transaction.offer}`}
-                            </div>
-                            {transaction.offer_details?.description && (
-                              <div className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                                {transaction.offer_details.description}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right py-4">
-                          <div className="inline-flex items-center bg-green-50 text-green-800 px-3 py-1.5 rounded-lg font-bold text-sm border border-green-200">
+                        <TableCell className="text-right font-medium">
+                          <div className="flex items-center justify-end">
+                            <DollarSign className="h-4 w-4 mr-1" />
                             {formatCurrency(transaction.amount)}
                           </div>
                         </TableCell>
-                        <TableCell className="py-4">
-                          {getStatusBadge(transaction.status)}
+                        <TableCell>{getStatusBadge(transaction.status)}</TableCell>
+                        <TableCell>{new Date(transaction.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {transaction.completed_at
+                            ? new Date(transaction.completed_at).toLocaleDateString()
+                            : 'N/A'}
                         </TableCell>
-                        <TableCell className="py-4">
-                          <div className="space-y-1">
-                            <div className="text-sm font-medium text-foreground">
-                              {new Date(transaction.created_at).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric'
-                              })}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {new Date(transaction.created_at).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <div className="space-y-1">
-                            {transaction.completed_at ? (
-                              <>
-                                <div className="text-sm font-medium text-foreground">
-                                  {new Date(transaction.completed_at).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                    year: 'numeric'
-                                  })}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {new Date(transaction.completed_at).toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </div>
-                              </>
-                            ) : (
-                              <div className="text-sm text-muted-foreground italic font-medium">Pending</div>
-                            )}
-                          </div>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              </motion.div>
+              </div>
 
-              {/* Pagination - Always show if there are transactions */}
-              {filteredAndSortedTransactions.length > 0 && (
-                <div className="flex justify-between items-center mt-8 bg-white rounded-lg border p-4">
-                  <div className="text-sm text-muted-foreground">
-                    Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredAndSortedTransactions.length)} of {filteredAndSortedTransactions.length} transactions
-                    {filteredAndSortedTransactions.length !== totalCount && (
-                      <span className="ml-1">(filtered from {totalCount} total)</span>
-                    )}
-                  </div>
-
-                  {totalFilteredPages > 1 && (
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        variant="outline"
-                        size="sm"
-                      >
-                        Previous
-                      </Button>
-
-                      <div className="flex items-center space-x-1">
-                        {Array.from({ length: Math.min(5, totalFilteredPages) }, (_, i) => {
-                          let page;
-                          if (totalFilteredPages <= 5) {
-                            page = i + 1;
-                          } else if (currentPage <= 3) {
-                            page = i + 1;
-                          } else if (currentPage >= totalFilteredPages - 2) {
-                            page = totalFilteredPages - 4 + i;
-                          } else {
-                            page = currentPage - 2 + i;
-                          }
-
-                          return (
-                            <Button
-                              key={page}
-                              onClick={() => handlePageChange(page)}
-                              variant={page === currentPage ? "default" : "outline"}
-                              size="sm"
-                              className="w-8 h-8 p-0"
-                            >
-                              {page}
-                            </Button>
-                          );
-                        })}
-                      </div>
-
-                      <Button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalFilteredPages}
-                        variant="outline"
-                        size="sm"
-                      >
-                        Next
-                      </Button>
-                    </div>
+              {/* Pagination */}
+              <div className="flex justify-between items-center mt-6 bg-white rounded-lg border p-4">
+                <div className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredAndSortedTransactions.length)} of {filteredAndSortedTransactions.length} transactions
+                  {filteredAndSortedTransactions.length !== totalCount && (
+                    <span className="ml-1">(filtered from {totalCount} total)</span>
                   )}
                 </div>
-              )}
+
+                {totalFilteredPages > 1 && (
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Previous
+                    </Button>
+
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, totalFilteredPages) }, (_, i) => {
+                        let page;
+                        if (totalFilteredPages <= 5) {
+                          page = i + 1;
+                        } else if (currentPage <= 3) {
+                          page = i + 1;
+                        } else if (currentPage >= totalFilteredPages - 2) {
+                          page = totalFilteredPages - 4 + i;
+                        } else {
+                          page = currentPage - 2 + i;
+                        }
+
+                        return (
+                          <Button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            variant={page === currentPage ? "default" : "outline"}
+                            size="sm"
+                            className="w-8 h-8 p-0"
+                          >
+                            {page}
+                          </Button>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalFilteredPages}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>

@@ -241,39 +241,36 @@ const SubscriptionsPage: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="flex-1 flex flex-col p-6 ml-64"
+        className="flex-1 flex flex-col"
       >
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <div className='flex items-center gap-3 mb-2'>
-                <h1 className="text-3xl font-bold tracking-tight">My Subscriptions</h1>
-                <Badge variant="outline" className="text-sm">
-                  {filteredAndSortedSubscriptions.length} of {totalCount}
-                </Badge>
-              </div>
-              <p className="text-muted-foreground">
-                Manage and track your active subscriptions
-              </p>
+        {/* Header - Improved design with less vertical space */}
+        <div className="bg-white border-b px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight">My Subscriptions</h1>
+              <Badge variant="outline" className="text-xs">
+                {filteredAndSortedSubscriptions.length} of {totalCount}
+              </Badge>
             </div>
           </div>
+        </div>
 
-          {/* Search and Filters */}
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="relative flex-1 min-w-[300px]">
+        {/* Search and Filters - Compacted */}
+        <div className="bg-white border-b px-6 py-3">
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="relative flex-1 min-w-[200px] max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search subscriptions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 py-1 text-sm"
               />
             </div>
 
             <Select value={normalizedStatusFilter} onValueChange={(value: string) => setStatusFilter(value)}>
-              <SelectTrigger className="w-[160px]">
-                <Filter className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-[140px] py-1 text-sm">
+                <Filter className="h-4 w-4 mr-1" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -285,35 +282,38 @@ const SubscriptionsPage: React.FC = () => {
             </Select>
 
             <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(parseInt(value, 10))}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Items per page" />
+              <SelectTrigger className="w-[100px] py-1 text-sm">
+                <SelectValue placeholder="Items" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="6">6 per page</SelectItem>
-                <SelectItem value="12">12 per page</SelectItem>
-                <SelectItem value="18">18 per page</SelectItem>
-                <SelectItem value="24">24 per page</SelectItem>
+                <SelectItem value="6">6 items</SelectItem>
+                <SelectItem value="12">12 items</SelectItem>
+                <SelectItem value="18">18 items</SelectItem>
+                <SelectItem value="24">24 items</SelectItem>
               </SelectContent>
             </Select>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                className="px-2"
               >
                 {viewMode === 'grid' ? <List className="h-4 w-4" /> : <Grid3X3 className="h-4 w-4" />}
               </Button>
             </div>
           </div>
+        </div>
 
-          {/* Sort Options */}
-          <div className="flex gap-2 mt-4">
+        {/* Sort Options */}
+        <div className="bg-white border-b px-6 py-2">
+          <div className="flex gap-1 flex-wrap">
             <Button
               variant={sortBy === 'name' ? 'default' : 'outline'}
               size="sm"
               onClick={() => toggleSort('name')}
-              className="text-xs"
+              className="text-xs px-2 py-1 h-7"
             >
               Name {sortBy === 'name' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
             </Button>
@@ -321,216 +321,231 @@ const SubscriptionsPage: React.FC = () => {
               variant={sortBy === 'price' ? 'default' : 'outline'}
               size="sm"
               onClick={() => toggleSort('price')}
-              className="text-xs"
+              className="text-xs px-2 py-1 h-7"
             >
               Price {sortBy === 'price' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
+            </Button>
+            <Button
+              variant={sortBy === 'activation_date' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => toggleSort('activation_date')}
+              className="text-xs px-2 py-1 h-7"
+            >
+              Activation {sortBy === 'activation_date' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
             </Button>
             <Button
               variant={sortBy === 'expiration_date' ? 'default' : 'outline'}
               size="sm"
               onClick={() => toggleSort('expiration_date')}
-              className="text-xs"
+              className="text-xs px-2 py-1 h-7"
             >
-              Expires {sortBy === 'expiration_date' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
+              Expiration {sortBy === 'expiration_date' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
             </Button>
             <Button
               variant={sortBy === 'time_remaining' ? 'default' : 'outline'}
               size="sm"
               onClick={() => toggleSort('time_remaining')}
-              className="text-xs"
+              className="text-xs px-2 py-1 h-7"
             >
-              Time Left {sortBy === 'time_remaining' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
+              Time Remaining {sortBy === 'time_remaining' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
             </Button>
           </div>
         </div>
 
-        {/* Subscriptions Display */}
-        {paginatedSubscriptions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            {subscriptions.length === 0 ? (
-              <>
-                <div className="bg-gray-100 dark:bg-gray-800 rounded-full p-4 mb-4">
-                  <Clock className="h-12 w-12 text-gray-400" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">No subscriptions found</h3>
-                <p className="text-muted-foreground max-w-md">
-                  You don't have any subscriptions at the moment. Browse offers to activate a new subscription.
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="text-muted-foreground mb-2">No subscriptions match your filters</div>
-                <p className="text-sm text-muted-foreground">Try adjusting your search or filters</p>
-              </>
-            )}
-          </div>
-        ) : (
-          <>
-            <motion.div
-              className={viewMode === 'grid'
-                ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                : "space-y-3"
-              }
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.3 }}
-            >
-              {paginatedSubscriptions.map((subscription, index) => {
-                const timeRemaining = getTimeRemaining(subscription.expiration_date);
-
-                return (
-                  <motion.div
-                    key={subscription.id}
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.05 * index, duration: 0.3 }}
-                    className={viewMode === 'grid' ? '' : 'w-full'}
-                  >
-                    {viewMode === 'grid' ? (
-                      // Grid Card View
-                      <div className="bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg mb-1 line-clamp-1">{subscription.offer_details.name}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{subscription.offer_details.description}</p>
-                          </div>
-                          <div className="ml-2">
+        {/* Main Content Area */}
+        <div className="flex-1 overflow-auto p-6">
+          {/* Subscriptions Display */}
+          {paginatedSubscriptions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="text-muted-foreground mb-2">No subscriptions found</div>
+              <p className="text-sm text-muted-foreground">Try adjusting your search or filters</p>
+            </div>
+          ) : (
+            <>
+              <motion.div
+                className={viewMode === 'grid'
+                  ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  : "space-y-3"
+                }
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                {paginatedSubscriptions.map((subscription, index) => {
+                  const timeRemaining = getTimeRemaining(subscription.expiration_date);
+                  return (
+                    <motion.div
+                      key={subscription.id}
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ delay: 0.05 * index, duration: 0.3 }}
+                      className={viewMode === 'grid' ? '' : 'w-full'}
+                    >
+                      {viewMode === 'grid' ? (
+                        // Grid Card View
+                        <div className="bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-lg mb-1 line-clamp-1">{subscription.offer_details.name}</h3>
+                              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{subscription.offer_details.description}</p>
+                            </div>
                             {getStatusBadge(subscription)}
                           </div>
-                        </div>
 
-                        <div className="space-y-2 mb-4">
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center text-muted-foreground">
-                              <DollarSign className="h-4 w-4 mr-1" />
-                              Price
-                            </div>
-                            <span className="font-bold text-lg">{formatCurrency(subscription.offer_details.price)}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center text-muted-foreground">
-                              <Clock className="h-4 w-4 mr-1" />
-                              Time Left
-                            </div>
-                            <span className={`font-medium ${timeRemaining.status === 'expired' ? 'text-red-500' : timeRemaining.status === 'expiring_soon' ? 'text-orange-500' : 'text-green-600'}`}>
-                              {timeRemaining.text}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center text-muted-foreground">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              Expires
-                            </div>
-                            <span className="font-medium">{formatDate(subscription.expiration_date)}</span>
-                          </div>
-                        </div>
-
-                        <div className="text-xs text-muted-foreground">
-                          Activated: {formatDate(subscription.activation_date)}
-                        </div>
-                      </div>
-                    ) : (
-                      // List View
-                      <div className="bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-1">
-                              <h3 className="font-semibold text-lg">{subscription.offer_details.name}</h3>
-                              {getStatusBadge(subscription)}
-                            </div>
-                            <p className="text-sm text-muted-foreground mb-2">{subscription.offer_details.description}</p>
-                            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                              <div className="flex items-center">
+                          <div className="space-y-2 mb-4">
+                            <div className="flex items-center justify-between text-sm">
+                              <div className="flex items-center text-muted-foreground">
                                 <DollarSign className="h-4 w-4 mr-1" />
-                                <span className="font-bold text-lg text-foreground">{formatCurrency(subscription.offer_details.price)}</span>
+                                Price
                               </div>
-                              <div className="flex items-center">
-                                <Clock className="h-4 w-4 mr-1" />
-                                <span className={timeRemaining.status === 'expired' ? 'text-red-500' : timeRemaining.status === 'expiring_soon' ? 'text-orange-500' : 'text-green-600'}>
-                                  {timeRemaining.text} left
-                                </span>
-                              </div>
-                              <div className="flex items-center">
+                              <span className="font-bold text-lg">{formatCurrency(subscription.offer_details.price)}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <div className="flex items-center text-muted-foreground">
                                 <Calendar className="h-4 w-4 mr-1" />
-                                <span>Expires {formatDate(subscription.expiration_date)}</span>
+                                Activated
                               </div>
+                              <span className="font-medium">{formatDate(subscription.activation_date)}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <div className="flex items-center text-muted-foreground">
+                                <Clock className="h-4 w-4 mr-1" />
+                                Expires
+                              </div>
+                              <span className="font-medium">{formatDate(subscription.expiration_date)}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <div className="flex items-center text-muted-foreground">
+                                <AlertCircle className="h-4 w-4 mr-1" />
+                                Time Remaining
+                              </div>
+                              <span className={`font-medium ${timeRemaining.status === 'expired' ? 'text-red-500' : timeRemaining.status === 'expiring_soon' ? 'text-yellow-500' : ''}`}>
+                                {timeRemaining.text}
+                              </span>
                             </div>
                           </div>
-                          <div className="ml-4 text-right">
-                            <div className="text-xs text-muted-foreground">
-                              Activated: {formatDate(subscription.activation_date)}
+
+                          <div className="flex justify-between">
+                            <Button variant="outline" size="sm" className="text-xs">
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Details
+                            </Button>
+                            <Button size="sm" className="text-xs">
+                              Extend
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        // List View
+                        <div className="bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-1">
+                                <h3 className="font-semibold text-lg">{subscription.offer_details.name}</h3>
+                                {getStatusBadge(subscription)}
+                              </div>
+                              <p className="text-sm text-muted-foreground mb-2">{subscription.offer_details.description}</p>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
+                                <div className="flex items-center">
+                                  <DollarSign className="h-4 w-4 mr-1" />
+                                  <span className="font-bold text-foreground">{formatCurrency(subscription.offer_details.price)}</span>
+                                </div>
+                                <div className="flex items-center">
+                                  <Calendar className="h-4 w-4 mr-1" />
+                                  <span>{formatDate(subscription.activation_date)}</span>
+                                </div>
+                                <div className="flex items-center">
+                                  <Clock className="h-4 w-4 mr-1" />
+                                  <span>{formatDate(subscription.expiration_date)}</span>
+                                </div>
+                                <div className="flex items-center">
+                                  <AlertCircle className="h-4 w-4 mr-1" />
+                                  <span className={`font-medium ${timeRemaining.status === 'expired' ? 'text-red-500' : timeRemaining.status === 'expiring_soon' ? 'text-yellow-500' : ''}`}>
+                                    {timeRemaining.text}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="ml-4 flex gap-2">
+                              <Button variant="outline" size="sm" className="text-xs">
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Details
+                              </Button>
+                              <Button size="sm" className="text-xs">
+                                Extend
+                              </Button>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </motion.div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
 
-            {/* Pagination - Always show if there are subscriptions */}
-            {filteredAndSortedSubscriptions.length > 0 && (
-              <div className="flex justify-between items-center mt-8 bg-white rounded-lg border p-4">
-                <div className="text-sm text-muted-foreground">
-                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredAndSortedSubscriptions.length)} of {filteredAndSortedSubscriptions.length} subscriptions
-                  {filteredAndSortedSubscriptions.length !== totalCount && (
-                    <span className="ml-1">(filtered from {totalCount} total)</span>
+              {/* Pagination - Always show if there are subscriptions */}
+              {filteredAndSortedSubscriptions.length > 0 && (
+                <div className="flex justify-between items-center mt-6 bg-white rounded-lg border p-4">
+                  <div className="text-sm text-muted-foreground">
+                    Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredAndSortedSubscriptions.length)} of {filteredAndSortedSubscriptions.length} subscriptions
+                    {filteredAndSortedSubscriptions.length !== totalCount && (
+                      <span className="ml-1">(filtered from {totalCount} total)</span>
+                    )}
+                  </div>
+
+                  {totalFilteredPages > 1 && (
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Previous
+                      </Button>
+
+                      <div className="flex items-center space-x-1">
+                        {Array.from({ length: Math.min(5, totalFilteredPages) }, (_, i) => {
+                          let page;
+                          if (totalFilteredPages <= 5) {
+                            page = i + 1;
+                          } else if (currentPage <= 3) {
+                            page = i + 1;
+                          } else if (currentPage >= totalFilteredPages - 2) {
+                            page = totalFilteredPages - 4 + i;
+                          } else {
+                            page = currentPage - 2 + i;
+                          }
+
+                          return (
+                            <Button
+                              key={page}
+                              onClick={() => handlePageChange(page)}
+                              variant={page === currentPage ? "default" : "outline"}
+                              size="sm"
+                              className="w-8 h-8 p-0"
+                            >
+                              {page}
+                            </Button>
+                          );
+                        })}
+                      </div>
+
+                      <Button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalFilteredPages}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Next
+                      </Button>
+                    </div>
                   )}
                 </div>
-
-                {totalFilteredPages > 1 && (
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Previous
-                    </Button>
-
-                    <div className="flex items-center space-x-1">
-                      {Array.from({ length: Math.min(5, totalFilteredPages) }, (_, i) => {
-                        let page;
-                        if (totalFilteredPages <= 5) {
-                          page = i + 1;
-                        } else if (currentPage <= 3) {
-                          page = i + 1;
-                        } else if (currentPage >= totalFilteredPages - 2) {
-                          page = totalFilteredPages - 4 + i;
-                        } else {
-                          page = currentPage - 2 + i;
-                        }
-
-                        return (
-                          <Button
-                            key={page}
-                            onClick={() => handlePageChange(page)}
-                            variant={page === currentPage ? "default" : "outline"}
-                            size="sm"
-                            className="w-8 h-8 p-0"
-                          >
-                            {page}
-                          </Button>
-                        );
-                      })}
-                    </div>
-
-                    <Button
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalFilteredPages}
-                      variant="outline"
-                      size="sm"
-                    >
-                      Next
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
+              )}
+            </>
+          )}
+        </div>
       </motion.div>
     </div>
   );

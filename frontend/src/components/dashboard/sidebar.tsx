@@ -10,7 +10,9 @@ import {
   HelpCircle,
   Receipt,
   FileText,
-  User
+  User,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/services/auth-context';
@@ -24,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useState, useEffect, useMemo } from 'react';
 
 // Sidebar component for navigation
 export function Sidebar() {
@@ -31,6 +34,23 @@ export function Sidebar() {
   const location = useLocation();
   // Get logout function and user from auth context
   const { logout, user } = useAuth();
+  
+  // State for sidebar collapse with localStorage persistence
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    return savedState ? JSON.parse(savedState) : false;
+  });
+
+  // Save sidebar state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(isCollapsed));
+  }, [isCollapsed]);
+
+  // Memoize the sidebar state to prevent unnecessary re-renders
+  const sidebarState = useMemo(() => ({
+    isCollapsed,
+    setIsCollapsed
+  }), [isCollapsed]);
 
   // Navigation items
   const navItems = [
@@ -61,11 +81,23 @@ export function Sidebar() {
     },
   ];
 
+  const toggleSidebar = () => {
+    sidebarState.setIsCollapsed(!sidebarState.isCollapsed);
+  };
+
   return (
-    <div className="w-64 bg-white border-r border-gray-200 fixed h-full z-50">
+    <div className={`${sidebarState.isCollapsed ? 'w-16' : 'w-64'} bg-white border-r border-gray-200 fixed h-screen z-50 transition-all duration-300`}>
       <div className="flex flex-col flex-grow border-r bg-sidebar text-sidebar-foreground h-full">
         <div className="flex items-center h-16 px-4 border-b">
-          <h1 className="text-xl font-bold">Offer Manager</h1>
+          {!sidebarState.isCollapsed && <h1 className="text-xl font-bold">Offer Manager</h1>}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="ml-auto"
+            onClick={toggleSidebar}
+          >
+            {sidebarState.isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </Button>
         </div>
         <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto">
 
@@ -80,13 +112,13 @@ export function Sidebar() {
                   <Link
                     key={item.title}
                     to={item.href}
-                    className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${isActive
+                    className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${isActive
                       ? 'bg-primary text-white'
                       : 'text-sidebar-foreground hover:bg-primary/10 hover:text-primary'
-                      }`}
+                      } ${sidebarState.isCollapsed ? 'justify-center' : ''}`}
                   >
-                    <Icon className="w-5 h-5 mr-3" />
-                    {item.title}
+                    <Icon className="w-5 h-5" />
+                    {!sidebarState.isCollapsed && <span className="ml-3">{item.title}</span>}
                   </Link>
                 );
               })}
@@ -98,18 +130,24 @@ export function Sidebar() {
         <div className="p-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full justify-start px-3 py-2 h-auto">
-                <div className="flex items-center space-x-3">
+              <Button 
+                title={user?.username || 'User'}
+                variant="outline" 
+                className={`cursor-pointer w-full h-auto ${sidebarState.isCollapsed ? 'justify-center p-2 border-none hover:bg-transparent bg-transparent' : 'justify-start px-3 py-2'}`}
+              >
+                <div className="flex items-center">
                   <Avatar className="w-8 h-8">
                     <AvatarImage src="https://csspicker.dev/api/image/?q=profile+avatar&image_type=photo" />
-                    <AvatarFallback>
+                    <AvatarFallback className="text-xs">
                       {user?.username?.charAt(0)?.toUpperCase() || 'U'}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col items-start">
-                    <div className="text-sm font-medium">{user?.username || 'User'}</div>
-                    <div className="text-xs text-muted-foreground">Free Plan</div>
-                  </div>
+                  {!sidebarState.isCollapsed && (
+                    <div className="ml-3 flex flex-col items-start">
+                      <div className="text-sm font-medium">{user?.username || 'User'}</div>
+                      <div className="text-xs text-muted-foreground">Free Plan</div>
+                    </div>
+                  )}
                 </div>
               </Button>
             </DropdownMenuTrigger>
