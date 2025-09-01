@@ -4,26 +4,25 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth } from '@/services/auth-context';
 import { offersApi } from '@/services/offers';
-import type { Offer, PaginatedResponse } from '@/services/offers';
-import toast, { Toaster } from 'react-hot-toast';
-import { useUrlPagination } from '@/hooks/useUrlPagination';
+import { useAuth } from '@/services/auth-context';
+import type { Offer } from '@/services/offers';
+import { toast, Toaster } from 'react-hot-toast';
 import {
+  DollarSign,
+  Clock,
+  Zap,
+  Loader2,
   Search,
   SortAsc,
   SortDesc,
-  Zap,
-  Clock,
-  DollarSign,
-  Loader2,
   Filter,
   Grid3X3,
   List
 } from 'lucide-react';
-
 import { Sidebar } from '../dashboard/sidebar';
-import { authApi } from '@/services/auth';
+import { useSidebar } from '../dashboard/sidebar-context';
+import { useUrlPagination } from '@/hooks/useUrlPagination';
 
 // Helper function to format price
 const formatPrice = (price: number | string): string => {
@@ -35,7 +34,7 @@ type SortOption = 'name' | 'price' | 'duration' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 type ViewMode = 'grid' | 'list';
 
-const OfferActivation: React.FC = () => {
+export default function OfferActivation() {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<number | null>(null);
@@ -46,6 +45,9 @@ const OfferActivation: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const { user, setUser } = useAuth();
+
+  // Get sidebar state
+  const { isCollapsed } = useSidebar();
 
   // Use URL-based pagination with status filter
   const { currentPage, pageSize, statusFilter, setCurrentPage, setPageSize, setStatusFilter } = useUrlPagination({
@@ -217,7 +219,9 @@ const OfferActivation: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className={'flex-1 flex flex-col ml-64 transition-all duration-300'}
+        className={`flex-1 flex flex-col transition-all duration-300 ${
+          isCollapsed ? 'ml-16' : 'ml-64'
+        }`}
       >
         {/* Header - Improved design with less vertical space */}
         <div className="bg-white border-b px-6 py-4">
@@ -517,5 +521,3 @@ const OfferActivation: React.FC = () => {
     </div>
   );
 };
-
-export default OfferActivation;

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { subscriptionsApi } from '@/services/subscriptions';
 import type { UserOffer, PaginatedResponse } from '@/services/subscriptions';
 import { useUrlPagination } from '@/hooks/useUrlPagination';
+import { useSidebar } from '../dashboard/sidebar-context';
 import {
   Calendar,
   Clock,
@@ -29,6 +30,9 @@ type ViewMode = 'grid' | 'list';
 type StatusFilter = 'all' | 'active' | 'expiring_soon' | 'expired';
 
 const SubscriptionsPage: React.FC = () => {
+  // Get sidebar state - moved to the top to fix hook order
+  const { isCollapsed } = useSidebar();
+
   const [subscriptions, setSubscriptions] = useState<UserOffer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -233,6 +237,9 @@ const SubscriptionsPage: React.FC = () => {
     );
   }
 
+  // Get sidebar state
+  // Removed duplicate useSidebar() call since we already have it at the top
+
   return (
     <div className='flex h-screen bg-gray-50'>
       <Sidebar />
@@ -241,7 +248,9 @@ const SubscriptionsPage: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="flex-1 flex flex-col"
+        className={`flex-1 flex flex-col transition-all duration-300 ${
+          isCollapsed ? 'ml-16' : 'ml-64'
+        }`}
       >
         {/* Header - Improved design with less vertical space */}
         <div className="bg-white border-b px-6 py-4">

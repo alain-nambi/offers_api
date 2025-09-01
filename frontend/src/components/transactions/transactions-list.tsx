@@ -34,6 +34,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { Sidebar } from '../dashboard/sidebar';
+import { useSidebar } from '../dashboard/sidebar-context';
 import { transactionsApi } from '@/services/transactions';
 import type { Transaction, PaginatedResponse } from '@/services/transactions';
 import { useUrlPagination } from '@/hooks/useUrlPagination';
@@ -239,6 +240,9 @@ const TransactionsList: React.FC = () => {
   //   );
   // }
 
+  // Get sidebar state
+  const { isCollapsed } = useSidebar();
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
@@ -247,7 +251,9 @@ const TransactionsList: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="flex-1 flex flex-col"
+        className={`flex-1 flex flex-col transition-all duration-300 ${
+          isCollapsed ? 'ml-16' : 'ml-64'
+        }`}
       >
         {/* Header - Improved design with less vertical space */}
         <div className="bg-white border-b px-6 py-4">

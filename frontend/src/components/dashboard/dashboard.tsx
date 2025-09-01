@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sidebar } from "@/components/dashboard/sidebar";
+import { useSidebar } from "@/components/dashboard/sidebar-context";
 import { Header } from "@/components/dashboard/header";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { RevenueChart } from "@/components/dashboard/revenue-chart";
@@ -16,6 +17,9 @@ export default function DashboardPage() {
   const [transactionNumber, setTransactionNumber] = useState<number | string>(0);
 
   const { user } = useAuth();
+  
+  // Get sidebar state
+  const { isCollapsed } = useSidebar();
 
   // Extract balance safely with fallback to 0
   const balance = user?.account?.balance ?? 0;
@@ -53,7 +57,9 @@ export default function DashboardPage() {
       transition={{ duration: 0.3 }}
     >
       <Sidebar />
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${
+        isCollapsed ? 'ml-16' : 'ml-64'
+      }`}>
         <Header />
         <main className="flex-1 p-6">
           <motion.div 

@@ -3,6 +3,8 @@ import React, { Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 // Import authentication context provider
 import { AuthProvider } from '@/services/auth-context';
+// Import sidebar context provider
+import { SidebarProvider } from '@/components/dashboard/sidebar-context';
 // Import protected route component
 import { ProtectedRoute } from '@/services/protected-route';
 // Import page components
@@ -103,12 +105,15 @@ export default function App() {
     <Router>
       {/* Wrap the app with AuthProvider to provide authentication context */}
       <AuthProvider>
-        {/* <AuthDebugger /> */}
-        <div className="App">
-          {/* <Suspense fallback={<LoadingSpinner fullScreen message="Loading application..." />}> */}
+        {/* Wrap the app with SidebarProvider to provide sidebar context */}
+        <SidebarProvider>
+          {/* <AuthDebugger /> */}
+          <div className="App">
+            {/* <Suspense fallback={<LoadingSpinner fullScreen message="Loading application..." />}> */}
             <AnimatedRoutes />
-          {/* </Suspense> */}
-        </div>
+            {/* </Suspense> */}
+          </div>
+        </SidebarProvider>
       </AuthProvider>
     </Router>
   );

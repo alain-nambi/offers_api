@@ -37,6 +37,7 @@ import {
   LineChart
 } from 'lucide-react';
 import { Sidebar } from '../dashboard/sidebar';
+import { useSidebar } from '../dashboard/sidebar-context';
 import { reportsApi, type ExportFormat } from '@/services/reports';
 import { transactionsApi } from '@/services/transactions';
 import type { Transaction } from '@/services/transactions';
@@ -59,6 +60,9 @@ const ReportsPage: React.FC = () => {
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [statsLoading, setStatsLoading] = useState<boolean>(true);
+
+  // Get sidebar state
+  const { isCollapsed } = useSidebar();
 
   // Load transaction statistics
   useEffect(() => {
@@ -202,12 +206,14 @@ const ReportsPage: React.FC = () => {
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar />
-
+      
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="flex-1 flex flex-col p-6 ml-64"
+        className={`flex-1 flex flex-col transition-all duration-300 ${
+          isCollapsed ? 'ml-16' : 'ml-64'
+        }`}
       >
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
