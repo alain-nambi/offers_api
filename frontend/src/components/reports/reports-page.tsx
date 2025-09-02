@@ -208,9 +208,9 @@ const ReportsPage: React.FC = () => {
       <Sidebar />
       
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
+        // initial={{ opacity: 0 }}
+        // animate={{ opacity: 1 }}
+        // transition={{ duration: 0.3 }}
         className={`flex-1 flex flex-col transition-all duration-300 ${
           isCollapsed ? 'ml-16' : 'ml-64'
         }`}
