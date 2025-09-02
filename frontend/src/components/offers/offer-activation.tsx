@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,11 +35,13 @@ type SortOption = 'name' | '-name' | 'price' | '-price' | 'duration_days' | '-du
 type ViewMode = 'grid' | 'list';
 
 export default function OfferActivation() {
+  const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<number | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('name');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const { user, setUser } = useAuth();
@@ -57,55 +59,6 @@ export default function OfferActivation() {
   // Convert URL status filter to our format
   const normalizedStatusFilter = statusFilter.toLowerCase() as 'all' | 'active' | 'inactive';
 
-  // Update URL when search or filters change
-  useEffect(() => {
-    // Update URL with search and sort parameters
-    const searchParams = new URLSearchParams(window.location.search);
-    
-    if (searchQuery) {
-      searchParams.set('search', searchQuery);
-    } else {
-      searchParams.delete('search');
-    }
-    
-    if (sortBy !== 'name') {
-      searchParams.set('sort', sortBy);
-    } else {
-      searchParams.delete('sort');
-    }
-    
-    // Update status filter in URL
-    if (normalizedStatusFilter !== 'all') {
-      searchParams.set('status', normalizedStatusFilter);
-    } else {
-      searchParams.delete('status');
-    }
-    
-    // Update page and limit
-    if (currentPage !== 1) {
-      searchParams.set('page', currentPage.toString());
-    } else {
-      searchParams.delete('page');
-    }
-    
-    if (pageSize !== 12) { // 12 is default
-      searchParams.set('limit', pageSize.toString());
-    } else {
-      searchParams.delete('limit');
-    }
-    
-    const newUrl = searchParams.toString();
-    const currentPath = window.location.pathname;
-    const fullUrl = newUrl ? `${currentPath}?${newUrl}` : currentPath;
-    
-    window.history.replaceState({}, '', fullUrl);
-  }, [searchQuery, sortBy, normalizedStatusFilter, currentPage, pageSize]);
-
-  // Load offers on component mount and when page/pageSize/search/sort/status changes
-  useEffect(() => {
-    loadOffers();
-  }, [currentPage, pageSize, searchQuery, sortBy, normalizedStatusFilter]);
-
   // Parse URL parameters on component mount
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -114,6 +67,7 @@ export default function OfferActivation() {
     const searchParam = searchParams.get('search');
     if (searchParam) {
       setSearchQuery(searchParam);
+      setDebouncedSearchQuery(searchParam);
     }
     
     // Set sort from URL
@@ -150,6 +104,83 @@ export default function OfferActivation() {
       }
     }
   }, []);
+  
+  // Debounce search query with 500ms delay
+  useEffect(() => {
+    // Clear the previous timeout
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+    
+    // Don't trigger API call immediately when component mounts
+    if (searchQuery === '' && debouncedSearchQuery === '') {
+      return;
+    }
+    
+    // Set a new timeout
+    searchDebounceRef.current = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      // Reset to first page when search query changes
+      setCurrentPage(1);
+    }, 250); // 250ms debounce delay
+    
+    // Cleanup function to clear timeout on unmount or when searchQuery changes
+    return () => {
+      if (searchDebounceRef.current) {
+        clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Update URL when filters change
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    // Update search query in URL
+    if (searchQuery) {
+      searchParams.set('search', searchQuery);
+    } else {
+      searchParams.delete('search');
+    }
+    
+    // Update sort in URL
+    if (sortBy !== 'name') { // name is default
+      searchParams.set('sort', sortBy);
+    } else {
+      searchParams.delete('sort');
+    }
+    
+    // Update status filter in URL
+    if (normalizedStatusFilter !== 'all') {
+      searchParams.set('status', normalizedStatusFilter);
+    } else {
+      searchParams.delete('status');
+    }
+    
+    // Update page and limit
+    if (currentPage !== 1) {
+      searchParams.set('page', currentPage.toString());
+    } else {
+      searchParams.delete('page');
+    }
+    
+    if (pageSize !== 12) { // 12 is default
+      searchParams.set('limit', pageSize.toString());
+    } else {
+      searchParams.delete('limit');
+    }
+    
+    const newUrl = searchParams.toString();
+    const currentPath = window.location.pathname;
+    const fullUrl = newUrl ? `${currentPath}?${newUrl}` : currentPath;
+    
+    window.history.replaceState({}, '', fullUrl);
+  }, [searchQuery, sortBy, normalizedStatusFilter, currentPage, pageSize]);
+
+  // Load offers on component mount and when page/pageSize/search/sort/status changes
+  useEffect(() => {
+    loadOffers();
+  }, [currentPage, pageSize, debouncedSearchQuery, sortBy, normalizedStatusFilter]);
 
   // Load offers from backend with pagination, filtering, and sorting
   const loadOffers = async () => {
