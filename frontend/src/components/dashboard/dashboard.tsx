@@ -27,8 +27,9 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchSubscriptions = async () => {
       try {
-        const subscriptions = await subscriptionsApi.getAllSubscriptions();
-        setSubscriptionNumber(subscriptions.length);
+        const subscriptions = await subscriptionsApi.getCountSubscriptions();
+
+        setSubscriptionNumber(subscriptions.active_subscriptions_count);
       } catch (error) {
         console.error('Error fetching subscriptions:', error);
         setSubscriptionNumber('Error');
@@ -37,7 +38,7 @@ export default function DashboardPage() {
 
     const fetchTransactions = async () => {
       try {
-        const transactions = await transactionsApi.getTransactions(1, 100); // Get all transactions
+        const transactions = await transactionsApi.getTransactions(); // Get all transactions
         setTransactionNumber(transactions.results.length);
       } catch (error) {
         console.error('Error fetching transactions:', error);
@@ -45,8 +46,8 @@ export default function DashboardPage() {
       }
     };
 
-    fetchSubscriptions();
-    fetchTransactions();
+    // Fetch both subscriptions and transactions in parallel
+    Promise.all([fetchSubscriptions(), fetchTransactions()]);
   }, []);
 
   return (
@@ -77,7 +78,7 @@ export default function DashboardPage() {
             />
             <MetricCard 
               title="Subscriptions" 
-              value={subscriptionNumber.toString()}
+              value={subscriptionNumber}
               change="Your current active subscriptions" 
               icon="package"
               trend="up"

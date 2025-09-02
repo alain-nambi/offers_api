@@ -49,6 +49,18 @@ def get_subscriptions(request):
     serializer = UserOfferSerializer(paginated_offers, many=True)
     return paginator.get_paginated_response(serializer.data)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_count_subscriptions(request):
+    """
+    Return the count of currently active offers for the user.
+    """
+    count = UserOffer.objects.filter(
+        user=request.user,
+        is_active=True
+    ).count()
+    return Response({'active_subscriptions_count': count}, status=status.HTTP_200_OK)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

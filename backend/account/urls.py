@@ -6,4 +6,5 @@ urlpatterns = [
     path('subscriptions/', views.get_subscriptions, name='get_subscriptions'),
     path('transactions/', views.transaction_status, name='list_transactions'),
     path('transactions/<str:transaction_id>/', views.transaction_status, name='transaction_status'),
+    path('subscriptions/count/', views.get_count_subscriptions, name='get_count_subscriptions'),
 ]

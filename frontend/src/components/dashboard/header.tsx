@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 export function Header() {
 
   return (
-    <header className="border-b px-6 py-3 sticky top-0 z-4 bg-background/80 backdrop-blur">
+    <header className="border-b px-6 py-4 sticky top-0 z-4 bg-background/80 backdrop-blur">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-900">Dashboard</h1>
         <div className="flex items-center space-x-3">

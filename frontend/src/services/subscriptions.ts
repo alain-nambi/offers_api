@@ -68,6 +68,13 @@ export const subscriptionsApi = {
     };
   },
   
+  getCountSubscriptions: async (): Promise<{ active_subscriptions_count: number }> => {
+    const response = await api.get<{ active_subscriptions_count: string }>(`/account/subscriptions/count/`);
+    return {
+      active_subscriptions_count: parseInt(response.data?.active_subscriptions_count ?? "0", 10)
+    };
+  },
+  
   // Get all active subscriptions for the user without pagination (for backward compatibility)
   getAllSubscriptions: async (): Promise<UserOffer[]> => {
     const response = await api.get<PaginatedResponse<UserOffer>>(`/account/subscriptions/`);
