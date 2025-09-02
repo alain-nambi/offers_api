@@ -11,6 +11,14 @@ export interface Offer {
   is_active: boolean;
 }
 
+// New interface for the backend API response format
+export interface OffersResponse {
+  data: Offer[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 // Pagination interface
 export interface PaginatedResponse<T> {
   count: number;
@@ -48,6 +56,15 @@ export interface ActivationStatus {
   updated_at: string;
 }
 
+// Interface for query parameters
+export interface ListOffersParams {
+  page?: number;
+  limit?: number;
+  sort?: string;
+  search?: string;
+  status?: string;
+}
+
 // Helper function to ensure price is a number
 const getPriceAsNumber = (price: number | string): number => {
   if (typeof price === 'number') {
@@ -58,18 +75,86 @@ const getPriceAsNumber = (price: number | string): number => {
 
 // Offers API functions
 export const offersApi = {
-  // Get all offers with pagination support
-  listOffers: async (page: number = 1, pageSize: number = 10): Promise<PaginatedResponse<Offer>> => {
-    const response = await api.get<PaginatedResponse<Offer>>(`/offers/?page=${page}&page_size=${pageSize}`);
-    // Ensure price is a number in the results
-    const results = response.data.results.map(offer => ({
-      ...offer,
-      price: getPriceAsNumber(offer.price)
-    }));
-    return {
-      ...response.data,
-      results
-    };
+  // Get all offers with pagination, filtering, and sorting support
+  listOffers: async (params: ListOffersParams = {}): Promise<OffersResponse> => {
+    const { page = 1, limit = 10, sort, search, status } = params;
+    
+    // Build query parameters
+    const queryParams = new URLSearchParams();
+    queryParams.set('page', page.toString());
+    queryParams.set('limit', limit.toString());
+    
+    if (sort) {
+      queryParams.set('sort', sort);
+    }
+    
+    if (search) {
+      queryParams.set('search', search);
+    }
+    
+    if (status && status !== 'all') {
+      queryParams.set('status', status);
+    }
+    
+    const queryString = queryParams.toString();
+    const url = `/offers${queryString ? `?${queryString}` : ''}`;
+    
+    try {
+      const response = await api.get(url);
+      
+      // Handle the new response format { data: [...], total: 120, page: 1, limit: 10 }
+      if (response.data && Array.isArray(response.data.data)) {
+        // Ensure price is a number in the results
+        const processedData = response.data.data.map((offer: Offer) => ({
+          ...offer,
+          price: getPriceAsNumber(offer.price)
+        }));
+        
+        return {
+          data: processedData,
+          total: response.data.total || 0,
+          page: response.data.page || page,
+          limit: response.data.limit || limit
+        };
+      }
+      
+      // Fallback for other response formats
+      let data: Offer[] = [];
+      let total = 0;
+      let currentPage = page;
+      let currentLimit = limit;
+      
+      // Check if response has the old format { results: [...], count: 120 }
+      if (response.data && Array.isArray(response.data.results)) {
+        data = response.data.results;
+        total = response.data.count || 0;
+        currentPage = page;
+        currentLimit = limit;
+      }
+      // If response is directly an array
+      else if (response.data && Array.isArray(response.data)) {
+        data = response.data;
+        total = data.length;
+        currentPage = page;
+        currentLimit = limit;
+      }
+      
+      // Ensure price is a number in the results
+      const processedData = data.map((offer: Offer) => ({
+        ...offer,
+        price: getPriceAsNumber(offer.price)
+      }));
+      
+      return {
+        data: processedData,
+        total,
+        page: currentPage,
+        limit: currentLimit
+      };
+    } catch (error) {
+      console.error('Error fetching offers:', error);
+      throw error;
+    }
   },
 
   // Get a specific offer

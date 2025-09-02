@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { offersApi } from '@/services/offers';
+import { authApi } from '@/services/auth';
 import { useAuth } from '@/services/auth-context';
 import type { Offer } from '@/services/offers';
 import { toast, Toaster } from 'react-hot-toast';
@@ -30,19 +31,16 @@ const formatPrice = (price: number | string): string => {
   return priceNum.toFixed(2);
 };
 
-type SortOption = 'name' | 'price' | 'duration' | 'created_at';
-type SortDirection = 'asc' | 'desc';
+type SortOption = 'name' | '-name' | 'price' | '-price' | 'duration_days' | '-duration_days' | 'created_at' | '-created_at';
 type ViewMode = 'grid' | 'list';
 
 export default function OfferActivation() {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState<number | null>(null);
-
   const [totalCount, setTotalCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const { user, setUser } = useAuth();
 
@@ -59,73 +57,125 @@ export default function OfferActivation() {
   // Convert URL status filter to our format
   const normalizedStatusFilter = statusFilter.toLowerCase() as 'all' | 'active' | 'inactive';
 
-  // Filter and sort offers
-  const filteredAndSortedOffers = useMemo(() => {
-    let filtered = offers.filter(offer => {
-      const matchesSearch = offer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        offer.description.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = normalizedStatusFilter === 'all' ||
-        (normalizedStatusFilter === 'active' && offer.is_active) ||
-        (normalizedStatusFilter === 'inactive' && !offer.is_active);
-      return matchesSearch && matchesStatus;
-    });
+  // Update URL when search or filters change
+  useEffect(() => {
+    // Update URL with search and sort parameters
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    if (searchQuery) {
+      searchParams.set('search', searchQuery);
+    } else {
+      searchParams.delete('search');
+    }
+    
+    if (sortBy !== 'name') {
+      searchParams.set('sort', sortBy);
+    } else {
+      searchParams.delete('sort');
+    }
+    
+    // Update status filter in URL
+    if (normalizedStatusFilter !== 'all') {
+      searchParams.set('status', normalizedStatusFilter);
+    } else {
+      searchParams.delete('status');
+    }
+    
+    // Update page and limit
+    if (currentPage !== 1) {
+      searchParams.set('page', currentPage.toString());
+    } else {
+      searchParams.delete('page');
+    }
+    
+    if (pageSize !== 12) { // 12 is default
+      searchParams.set('limit', pageSize.toString());
+    } else {
+      searchParams.delete('limit');
+    }
+    
+    const newUrl = searchParams.toString();
+    const currentPath = window.location.pathname;
+    const fullUrl = newUrl ? `${currentPath}?${newUrl}` : currentPath;
+    
+    window.history.replaceState({}, '', fullUrl);
+  }, [searchQuery, sortBy, normalizedStatusFilter, currentPage, pageSize]);
 
-    // Sort offers
-    filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
-
-      switch (sortBy) {
-        case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-          break;
-        case 'price':
-          aValue = parseFloat(a.price.toString());
-          bValue = parseFloat(b.price.toString());
-          break;
-        case 'duration':
-          aValue = a.duration_days;
-          bValue = b.duration_days;
-          break;
-        case 'created_at':
-          aValue = new Date(a.created_at);
-          bValue = new Date(b.created_at);
-          break;
-        default:
-          return 0;
-      }
-
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-
-    return filtered;
-  }, [offers, searchQuery, sortBy, sortDirection, normalizedStatusFilter]);
-
-  // Load offers on component mount and when page/pageSize changes
+  // Load offers on component mount and when page/pageSize/search/sort/status changes
   useEffect(() => {
     loadOffers();
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, searchQuery, sortBy, normalizedStatusFilter]);
 
-  // Reset to first page when search or filters change
+  // Parse URL parameters on component mount
   useEffect(() => {
-    if (currentPage !== 1) {
-      setCurrentPage(1);
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    // Set search query from URL
+    const searchParam = searchParams.get('search');
+    if (searchParam) {
+      setSearchQuery(searchParam);
     }
-  }, [searchQuery, sortBy, sortDirection]);
+    
+    // Set sort from URL
+    const sortParam = searchParams.get('sort') as SortOption;
+    if (sortParam && ['name', '-name', 'price', '-price', 'duration_days', '-duration_days', 'created_at', '-created_at'].includes(sortParam)) {
+      setSortBy(sortParam);
+    }
+    
+    // Set status filter from URL
+    const statusParam = searchParams.get('status');
+    if (statusParam) {
+      setStatusFilter(statusParam);
+    }
+    
+    // Set page from URL
+    const pageParam = searchParams.get('page');
+    if (pageParam) {
+      const pageNum = parseInt(pageParam, 10);
+      if (!isNaN(pageNum) && pageNum > 0) {
+        if (pageNum !== currentPage) {
+          setCurrentPage(pageNum);
+        }
+      }
+    }
+    
+    // Set limit from URL
+    const limitParam = searchParams.get('limit');
+    if (limitParam) {
+      const limitNum = parseInt(limitParam, 10);
+      if (!isNaN(limitNum) && limitNum > 0) {
+        if (limitNum !== pageSize) {
+          setPageSize(limitNum);
+        }
+      }
+    }
+  }, []);
 
-  // Load all available offers
+  // Load offers from backend with pagination, filtering, and sorting
   const loadOffers = async () => {
     try {
       setLoading(true);
-      // Load more items to enable client-side filtering and sorting
-      const data: PaginatedResponse<Offer> = await offersApi.listOffers(1, 100);
-      setOffers(data.results);
-      setTotalCount(data.count);
-    } catch (error) {
-      toast.error('Failed to load offers');
+      
+      // Prepare query parameters
+      const params = {
+        page: currentPage,
+        limit: pageSize,
+        sort: sortBy !== 'name' ? sortBy : undefined, // Don't send 'name' as it's default
+        search: searchQuery || undefined,
+        status: normalizedStatusFilter !== 'all' ? normalizedStatusFilter : undefined
+      };
+      
+      // Make API request with all parameters
+      const response = await offersApi.listOffers(params);
+      
+      setOffers(response.data || []);
+      setTotalCount(response.total || 0);
+    } catch (error: any) {
       console.error('Error loading offers:', error);
+      toast.error(`Failed to load offers: ${error.message || 'Unknown error'}`);
+      // Set default values on error
+      setOffers([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
@@ -176,23 +226,25 @@ export default function OfferActivation() {
   };
 
   // Toggle sort direction
-  const toggleSort = (newSortBy: SortOption) => {
-    if (sortBy === newSortBy) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  const toggleSort = (newSortField: string) => {
+    let newSortBy: SortOption;
+    
+    // If we're already sorting by this field, toggle direction
+    if (sortBy === newSortField) {
+      // Toggle to descending
+      newSortBy = `-${newSortField}` as SortOption;
+    } else if (sortBy === `-${newSortField}`) {
+      // Toggle back to ascending (default)
+      newSortBy = newSortField as SortOption;
     } else {
-      setSortBy(newSortBy);
-      setSortDirection('asc');
+      // Set new sort field (default to ascending)
+      newSortBy = newSortField as SortOption;
     }
+    
+    setSortBy(newSortBy);
   };
 
-  // Paginate filtered results
-  const paginatedOffers = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    return filteredAndSortedOffers.slice(startIndex, endIndex);
-  }, [filteredAndSortedOffers, currentPage, pageSize]);
-
-  const totalFilteredPages = Math.ceil(filteredAndSortedOffers.length / pageSize);
+  const totalFilteredPages = Math.ceil(totalCount / pageSize);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalFilteredPages) {
@@ -226,7 +278,7 @@ export default function OfferActivation() {
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold tracking-tight">Available Offers</h1>
               <Badge variant="outline" className="text-xs">
-                {filteredAndSortedOffers.length} of {totalCount}
+                {offers.length} of {totalCount}
               </Badge>
             </div>
             <div>
@@ -291,36 +343,36 @@ export default function OfferActivation() {
         <div className="bg-white border-b px-6 py-2">
           <div className="flex gap-1 flex-wrap">
             <Button
-              variant={sortBy === 'name' ? 'default' : 'outline'}
+              variant={sortBy === 'name' || sortBy === '-name' ? 'default' : 'outline'}
               size="sm"
               onClick={() => toggleSort('name')}
               className="text-xs px-2 py-1 h-7"
             >
-              Name {sortBy === 'name' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
+              Name {sortBy === 'name' && <SortAsc className="ml-1 h-3 w-3" />}{sortBy === '-name' && <SortDesc className="ml-1 h-3 w-3" />}
             </Button>
             <Button
-              variant={sortBy === 'price' ? 'default' : 'outline'}
+              variant={sortBy === 'price' || sortBy === '-price' ? 'default' : 'outline'}
               size="sm"
               onClick={() => toggleSort('price')}
               className="text-xs px-2 py-1 h-7"
             >
-              Price {sortBy === 'price' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
+              Price {sortBy === 'price' && <SortAsc className="ml-1 h-3 w-3" />}{sortBy === '-price' && <SortDesc className="ml-1 h-3 w-3" />}
             </Button>
             <Button
-              variant={sortBy === 'duration' ? 'default' : 'outline'}
+              variant={sortBy === 'duration_days' || sortBy === '-duration_days' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => toggleSort('duration')}
+              onClick={() => toggleSort('duration_days')}
               className="text-xs px-2 py-1 h-7"
             >
-              Duration {sortBy === 'duration' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
+              Duration {sortBy === 'duration_days' && <SortAsc className="ml-1 h-3 w-3" />}{sortBy === '-duration_days' && <SortDesc className="ml-1 h-3 w-3" />}
             </Button>
             <Button
-              variant={sortBy === 'created_at' ? 'default' : 'outline'}
+              variant={sortBy === 'created_at' || sortBy === '-created_at' ? 'default' : 'outline'}
               size="sm"
               onClick={() => toggleSort('created_at')}
               className="text-xs px-2 py-1 h-7"
             >
-              Date {sortBy === 'created_at' && (sortDirection === 'asc' ? <SortAsc className="ml-1 h-3 w-3" /> : <SortDesc className="ml-1 h-3 w-3" />)}
+              Date {sortBy === 'created_at' && <SortAsc className="ml-1 h-3 w-3" />}{sortBy === '-created_at' && <SortDesc className="ml-1 h-3 w-3" />}
             </Button>
           </div>
         </div>
@@ -328,7 +380,7 @@ export default function OfferActivation() {
         {/* Main Content Area */}
         <div className="flex-1 overflow-auto p-6">
           {/* Offers Display */}
-          {paginatedOffers.length === 0 ? (
+          {offers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="text-muted-foreground mb-2">No offers found</div>
               <p className="text-sm text-muted-foreground">Try adjusting your search or filters</p>
@@ -344,7 +396,7 @@ export default function OfferActivation() {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                {paginatedOffers.map((offer, index) => (
+                {offers.map((offer, index) => (
                   <motion.div
                     key={offer.id}
                     initial={{ y: 20, opacity: 0 }}
@@ -450,13 +502,10 @@ export default function OfferActivation() {
               </motion.div>
 
               {/* Pagination - Always show if there are offers */}
-              {filteredAndSortedOffers.length > 0 && (
+              {offers.length > 0 && (
                 <div className="flex justify-between items-center mt-6 bg-white rounded-lg border p-4">
                   <div className="text-sm text-muted-foreground">
-                    Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredAndSortedOffers.length)} of {filteredAndSortedOffers.length} offers
-                    {filteredAndSortedOffers.length !== totalCount && (
-                      <span className="ml-1">(filtered from {totalCount} total)</span>
-                    )}
+                    Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} offers
                   </div>
 
                   {totalFilteredPages > 1 && (

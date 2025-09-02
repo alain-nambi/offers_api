@@ -20,17 +20,20 @@ logger = logging.getLogger(__name__)
 
 class OfferPagination(PageNumberPagination):
     page_size = 10
-    page_size_query_param = 'page_size'
+    page_size_query_param = 'limit'
     max_page_size = 100
 
 
 @swagger_auto_schema(
     method='get',
-    operation_description="Retrieve a paginated list of all available offers",
+    operation_description="Retrieve a paginated list of all available offers with sorting and filtering support",
     operation_summary="List Available Offers",
     manual_parameters=[
         openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER),
-        openapi.Parameter('page_size', openapi.IN_QUERY, description="Number of results per page (max 100)", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('limit', openapi.IN_QUERY, description="Number of results per page (max 100)", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('search', openapi.IN_QUERY, description="Search by offer name or description", type=openapi.TYPE_STRING),
+        openapi.Parameter('sort', openapi.IN_QUERY, description="Sort by field (prefix with - for descending)", type=openapi.TYPE_STRING),
+        openapi.Parameter('status', openapi.IN_QUERY, description="Filter by status (active/inactive)", type=openapi.TYPE_STRING),
     ],
     responses={
         200: openapi.Response(
@@ -38,10 +41,7 @@ class OfferPagination(PageNumberPagination):
             schema=openapi.Schema(
                 type=openapi.TYPE_OBJECT,
                 properties={
-                    'count': openapi.Schema(type=openapi.TYPE_INTEGER, description='Total number of offers'),
-                    'next': openapi.Schema(type=openapi.TYPE_STRING, description='URL to next page'),
-                    'previous': openapi.Schema(type=openapi.TYPE_STRING, description='URL to previous page'),
-                    'results': openapi.Schema(
+                    'data': openapi.Schema(
                         type=openapi.TYPE_ARRAY,
                         items=openapi.Schema(
                             type=openapi.TYPE_OBJECT,
@@ -52,9 +52,13 @@ class OfferPagination(PageNumberPagination):
                                 'price': openapi.Schema(type=openapi.TYPE_NUMBER, description='Offer price'),
                                 'duration_days': openapi.Schema(type=openapi.TYPE_INTEGER, description='Duration in days'),
                                 'is_active': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Whether offer is active'),
+                                'created_at': openapi.Schema(type=openapi.TYPE_STRING, description='Creation timestamp'),
                             }
                         )
-                    )
+                    ),
+                    'total': openapi.Schema(type=openapi.TYPE_INTEGER, description='Total number of offers'),
+                    'page': openapi.Schema(type=openapi.TYPE_INTEGER, description='Current page number'),
+                    'limit': openapi.Schema(type=openapi.TYPE_INTEGER, description='Number of items per page'),
                 }
             )
         ),
@@ -66,13 +70,52 @@ class OfferPagination(PageNumberPagination):
 @permission_classes([IsAuthenticated])
 def list_offers(request):
     """
-    List all available offers with pagination.
+    List all available offers with pagination, sorting, and filtering support.
     """
-    offers = Offer.objects.all().order_by('id')
+    # Get query parameters
+    search = request.GET.get('search', '')
+    sort = request.GET.get('sort', 'name')
+    status_filter = request.GET.get('status', '')
+    
+    # Start with all offers
+    offers = Offer.objects.all()
+    
+    # Apply search filter
+    if search:
+        offers = offers.filter(
+            Q(name__icontains=search) | Q(description__icontains=search)
+        )
+    
+    # Apply status filter
+    if status_filter and status_filter.lower() != 'all':
+        if status_filter.lower() == 'active':
+            offers = offers.filter(is_active=True)
+        elif status_filter.lower() == 'inactive':
+            offers = offers.filter(is_active=False)
+    
+    # Apply sorting
+    if sort:
+        # Handle descending sort (prefixed with -)
+        if sort.startswith('-'):
+            offers = offers.order_by(sort)
+        else:
+            offers = offers.order_by(sort)
+    else:
+        # Default sort by name
+        offers = offers.order_by('name')
+    
+    # Paginate results
     paginator = OfferPagination()
     paginated_offers = paginator.paginate_queryset(offers, request)
     serializer = OfferSerializer(paginated_offers, many=True)
-    return paginator.get_paginated_response(serializer.data)
+    
+    # Return response in the new format
+    return Response({
+        'data': serializer.data,
+        'total': paginator.page.paginator.count,
+        'page': paginator.page.number,
+        'limit': paginator.get_page_size(request)
+    })
 
 
 @api_view(['GET'])
