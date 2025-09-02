@@ -122,7 +122,7 @@ export default function OfferActivation() {
       setDebouncedSearchQuery(searchQuery);
       // Reset to first page when search query changes
       setCurrentPage(1);
-    }, 250); // 250ms debounce delay
+    }, 500); // 500ms debounce delay
     
     // Cleanup function to clear timeout on unmount or when searchQuery changes
     return () => {
