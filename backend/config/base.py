@@ -55,17 +55,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Allow frontend origin
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:1234",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:1234",
-    # "https://your-production-frontend.com"  # Add production URL later
-]
+# Autoriser toutes les origines (dev uniquement)
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Optional: Allow credentials (cookies, Authorization)
 CORS_ALLOW_CREDENTIALS = True
+
+
+# Allow frontend origin
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     # "https://your-production-frontend.com"  # Add production URL later
+# ]
 
 ROOT_URLCONF = 'config.urls'
 
