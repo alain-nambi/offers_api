@@ -2,7 +2,7 @@ import { DollarSign, TrendingUp, Ticket, Clock, Package, Wallet } from "lucide-r
 
 interface MetricCardProps {
   title: string;
-  value: string;
+  value: string | number;
   change: string;
   trend: "up" | "down";
   icon: keyof typeof icons; // restrict to keys of icons object
