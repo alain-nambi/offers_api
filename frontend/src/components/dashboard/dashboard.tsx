@@ -4,9 +4,8 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { useSidebar } from "@/components/dashboard/sidebar-context";
 import { Header } from "@/components/dashboard/header";
 import { MetricCard } from "@/components/dashboard/metric-card";
-import { RevenueChart } from "@/components/dashboard/revenue-chart";
-import { TicketChart } from "@/components/dashboard/ticket-chart";
 import { ProCard } from "@/components/dashboard/pro-card";
+import { SubscriptionCharts } from "@/components/dashboard/subscription-charts";
 import { subscriptionsApi } from '@/services/subscriptions';
 import { transactionsApi } from '@/services/transactions';
 import { useAuth } from '@/services/auth-context';
@@ -93,23 +92,15 @@ export default function DashboardPage() {
           </motion.div>
           
           <motion.div 
-            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 lg:grid-cols-2 gap-6"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.3 }}
           >
             <div className="lg:col-span-2">
-              <RevenueChart />
+              <SubscriptionCharts />
             </div>
-            <ProCard />
-          </motion.div>
-
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.3 }}
-          >
-            <TicketChart />
+            {/* <ProCard /> */}
           </motion.div>
         </main>
       </div>
