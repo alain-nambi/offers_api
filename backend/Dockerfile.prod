@@ -29,9 +29,9 @@ RUN mkdir -p /app/logs
 RUN python manage.py collectstatic --noinput --verbosity 0 || true
 
 # Create a non-root user
-RUN adduser --disabled-password --gecos '' appuser
-RUN chown -R appuser:appuser /app
-USER appuser
+# RUN adduser --disabled-password --gecos '' appuser
+# RUN chown -R appuser:appuser /app
+# USER appuser
 
 # Expose port
 EXPOSE 8000
