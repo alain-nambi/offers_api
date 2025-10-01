@@ -4,7 +4,6 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { useSidebar } from "@/components/dashboard/sidebar-context";
 import { Header } from "@/components/dashboard/header";
 import { MetricCard } from "@/components/dashboard/metric-card";
-import { ProCard } from "@/components/dashboard/pro-card";
 import { SubscriptionCharts } from "@/components/dashboard/subscription-charts";
 import { subscriptionsApi } from '@/services/subscriptions';
 import { transactionsApi } from '@/services/transactions';

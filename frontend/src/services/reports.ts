@@ -101,7 +101,6 @@ const convertToPDF = (transactions: Transaction[], dateRange: DateRange): Blob =
 
   // Page dimensions
   const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
   
   // Header with company branding
   doc.setFillColor(249, 250, 251); // gray-50
@@ -158,7 +157,7 @@ const convertToPDF = (transactions: Transaction[], dateRange: DateRange): Blob =
   doc.roundedRect(30, 170, pageWidth - 60, 100, 5, 5, 'F');
   doc.setDrawColor(229, 231, 235); // gray-200
   doc.setLineWidth(0.5);
-  doc.roundedRect(30, 170, pageWidth - 60, 100, 5, 5);
+  doc.roundedRect(30, 170, pageWidth - 60, 100, 5, 5, 'S');
   
   // Summary title
   doc.setTextColor(17, 24, 39); // gray-900

@@ -27,88 +27,30 @@ services:
 
   web:
     build: .
-    command: >
-      sh -c "while ! nc -z db 5432 && ! nc -z redis 6379; do
-        echo 'Waiting for database and redis...';
-        sleep 2;
-      done;
-      python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:8000 &&
-             python manage.py seed --users 5 --offers 10"
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - .:/app
-      - ./logs:/app/logs
     ports:
       - "8000:8000"
     environment:
-      - DEBUG=True
-      - DB_NAME=offers_db
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_DB=0
+      - DEBUG=1
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - db
+      - redis
 
-  celery:
-    build: .
-    command: >
-      sh -c "while ! nc -z db 5432 && ! nc -z redis 6379; do
-        echo 'Waiting for database and redis...';
-        sleep 2;
-      done;
-      celery -A config worker --loglevel=info"
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
     volumes:
-      - .:/app
-      - ./logs:/app/logs
+      - ../frontend:/app
+      - /app/node_modules
     environment:
-      - DEBUG=True
-      - DB_NAME=offers_db
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_DB=0
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  celery-beat:
-    build: .
-    command: >
-      sh -c "while ! nc -z db 5432 && ! nc -z redis 6379; do
-        echo 'Waiting for database and redis...';
-        sleep 2;
-      done;
-      celery -A config beat --loglevel=info"
-    volumes:
-      - .:/app
-      - ./logs:/app/logs
-    environment:
-      - DEBUG=True
-      - DB_NAME=offers_db
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_DB=0
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - web
 
 volumes:
   postgres_data:

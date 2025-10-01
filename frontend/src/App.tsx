@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React from "react";
 // Import routing components from react-router-dom
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 // Import authentication context provider
@@ -6,7 +6,7 @@ import { AuthProvider } from '@/services/auth-context';
 // Import sidebar context provider
 import { SidebarProvider } from '@/components/dashboard/sidebar-context';
 // Import protected route component
-import { ProtectedRoute } from '@/services/protected-route';
+import ProtectedRoute from '@/components/ProtectedRoute';
 // Import page components
 import LoginPage from '@/components/auth/login-page';
 import DashboardPage from "@/components/dashboard/dashboard";

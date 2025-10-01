@@ -19,7 +19,6 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import {
-  Loader2,
   RefreshCw,
   Search,
   SortAsc,

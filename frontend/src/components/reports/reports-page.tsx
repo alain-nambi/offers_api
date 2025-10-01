@@ -27,7 +27,6 @@ import {
   TrendingUp,
   DollarSign,
   Activity,
-  Users,
   CheckCircle,
   XCircle,
   Clock,
@@ -473,8 +472,7 @@ const ReportsPage: React.FC = () => {
                   {showDatePicker && (
                     <div className="absolute z-10 mt-2 p-4 bg-white border rounded-lg shadow-lg right-0">
                       <DateRangePicker
-                        onChange={item => setState([item.selection])}
-                        showSelectionPreview={true}
+                        onChange={(item) => setState([item.selection])}
                         moveRangeOnFirstSelection={false}
                         months={2}
                         ranges={state}

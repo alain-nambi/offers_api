@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line } from "recharts";
 import { subscriptionsApi } from '@/services/subscriptions';
 import { Loader2 } from 'lucide-react';
@@ -69,7 +69,6 @@ export function SubscriptionCharts() {
         allSubscriptions.forEach(sub => {
           const date = new Date(sub.activation_date);
           const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-          const monthName = date.toLocaleString('default', { month: 'short' }) + ' ' + date.getFullYear();
           
           if (!monthMap[monthKey]) {
             monthMap[monthKey] = { count: 0, amount: 0 };

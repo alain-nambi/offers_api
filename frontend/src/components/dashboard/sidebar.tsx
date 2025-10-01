@@ -2,8 +2,6 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   CreditCard,
-  Ticket,
-  BarChart3,
   Settings,
   LogOut,
   ShoppingBag,
